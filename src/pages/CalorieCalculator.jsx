@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { calculateBMR, calculateTDEE, calculateProteinTarget, ACTIVITY_LEVELS } from '../utils/helpers'
-import { Calculator, Flame, Target, TrendingUp, ChevronRight, Dumbbell, Wheat, Avocado, BarChart2, Star } from 'lucide-react'
+import { Calculator, Flame, Target, TrendingUp, ChevronRight, Dumbbell, Wheat, BarChart2, Star } from 'lucide-react'
 
 export default function CalorieCalculator({ onPageChange }) {
   const { state, dispatch } = useApp()
