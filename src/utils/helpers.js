@@ -110,13 +110,14 @@ export function getGreeting() {
   return 'Selamat Malam'
 }
 
-// Meal types
+// Meal types - icon: nama komponen lucide-react
 export const MEAL_TYPES = {
-  breakfast: { label: 'Sarapan', emoji: '🌅', color: '#f97316' },
-  lunch: { label: 'Makan Siang', emoji: '☀️', color: '#22c55e' },
-  dinner: { label: 'Makan Malam', emoji: '🌙', color: '#3b82f6' },
-  snack: { label: 'Snack', emoji: '🍪', color: '#a855f7' },
+  breakfast: { label: 'Sarapan', icon: 'Sunrise', color: '#f97316' },
+  lunch: { label: 'Makan Siang', icon: 'Sun', color: '#22c55e' },
+  dinner: { label: 'Makan Malam', icon: 'Moon', color: '#3b82f6' },
+  snack: { label: 'Snack', icon: 'Cookie', color: '#a855f7' },
 }
+
 
 // Database makanan Indonesia (lokasi)
 export const FOOD_DATABASE = [

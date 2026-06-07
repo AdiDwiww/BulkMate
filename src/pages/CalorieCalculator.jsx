@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { calculateBMR, calculateTDEE, calculateProteinTarget, ACTIVITY_LEVELS } from '../utils/helpers'
-import { Calculator, Flame, Target, TrendingUp, ChevronRight } from 'lucide-react'
+import { Calculator, Flame, Target, TrendingUp, ChevronRight, Dumbbell, Wheat, Avocado, BarChart2, Star } from 'lucide-react'
 
 export default function CalorieCalculator({ onPageChange }) {
   const { state, dispatch } = useApp()
@@ -83,7 +83,7 @@ export default function CalorieCalculator({ onPageChange }) {
           <div>
             <label className="label">Jenis Kelamin</label>
             <div className="flex gap-3">
-              {[{ value: 'male', label: '♂️ Laki-laki' }, { value: 'female', label: '♀️ Perempuan' }].map(opt => (
+              {[{ value: 'male', label: 'Laki-laki' }, { value: 'female', label: 'Perempuan' }].map(opt => (
                 <button
                   key={opt.value}
                   onClick={() => setForm(f => ({ ...f, gender: opt.value }))}
@@ -194,15 +194,17 @@ export default function CalorieCalculator({ onPageChange }) {
 
           {/* Macros recommendation */}
           <div className="card p-5">
-            <h3 className="font-bold mb-3" style={{ color: 'var(--text-primary)' }}>📊 Rekomendasi Makronutrisi</h3>
+            <h3 className="font-bold mb-3 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}><BarChart2 size={16} color="#3b82f6" /> Rekomendasi Makronutrisi</h3>
             <div className="grid grid-cols-3 gap-3">
               {[
-                { label: 'Protein', value: result.protein, unit: 'g', color: '#3b82f6', emoji: '💪' },
-                { label: 'Karbo', value: result.carb, unit: 'g', color: '#f97316', emoji: '🌾' },
-                { label: 'Lemak', value: result.fat, unit: 'g', color: '#a855f7', emoji: '🥑' },
+                { label: 'Protein', value: result.protein, unit: 'g', color: '#3b82f6', Icon: Dumbbell },
+                { label: 'Karbo', value: result.carb, unit: 'g', color: '#f97316', Icon: Wheat },
+                { label: 'Lemak', value: result.fat, unit: 'g', color: '#a855f7', Icon: Target },
               ].map(m => (
                 <div key={m.label} className="text-center p-3 rounded-xl" style={{ background: `${m.color}10` }}>
-                  <div className="text-lg mb-1">{m.emoji}</div>
+                  <div className="flex justify-center mb-1">
+                    <m.Icon size={18} color={m.color} />
+                  </div>
                   <div className="text-xl font-black" style={{ color: m.color }}>{m.value}{m.unit}</div>
                   <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{m.label}</div>
                 </div>
@@ -212,7 +214,7 @@ export default function CalorieCalculator({ onPageChange }) {
 
           {/* Surplus options */}
           <div>
-            <h3 className="font-bold mb-3" style={{ color: 'var(--text-primary)' }}>🎯 Pilih Target Surplus Kalori</h3>
+            <h3 className="font-bold mb-3 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}><Target size={16} color="#22c55e" /> Pilih Target Surplus Kalori</h3>
             <div className="space-y-3">
               {surplusOptions.map(opt => (
                 <div
@@ -225,7 +227,7 @@ export default function CalorieCalculator({ onPageChange }) {
                       <div className="flex items-center gap-2">
                         <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{opt.label}</span>
                         {opt.recommended && (
-                          <span className="badge badge-green text-xs">⭐ Disarankan</span>
+                          <span className="badge badge-green text-xs flex items-center gap-1"><Star size={9} fill="#22c55e" /> Disarankan</span>
                         )}
                       </div>
                       <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{opt.desc}</div>

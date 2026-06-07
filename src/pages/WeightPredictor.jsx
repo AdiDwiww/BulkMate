@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
 import { estimateTimeToTarget } from '../utils/helpers'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
-import { Target, TrendingUp, Calendar, Zap } from 'lucide-react'
+import { Target, TrendingUp, Calendar, Zap, Scale, CalendarDays, CalendarRange, Clock, Dumbbell, BedDouble, Droplets, BarChart2, CheckCircle2 } from 'lucide-react'
 
 export default function WeightPredictor() {
   const { state } = useApp()
@@ -126,7 +126,7 @@ export default function WeightPredictor() {
               </div>
             </div>
             <div className="mt-4 py-3 px-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.15)' }}>
-              <div className="text-sm text-green-100">🎯 Perkiraan tercapai pada:</div>
+              <div className="text-sm text-green-100 flex items-center gap-1"><Target size={13} /> Perkiraan tercapai pada:</div>
               <div className="font-bold text-base mt-1">{targetDateStr}</div>
             </div>
           </div>
@@ -134,13 +134,13 @@ export default function WeightPredictor() {
           {/* Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: 'Perlu Naik', value: `${(targetWeight - currentWeight).toFixed(1)} kg`, icon: '⚖️', color: '#22c55e' },
-              { label: 'Per Minggu', value: `+${weeklyGain} kg`, icon: '📅', color: '#3b82f6' },
-              { label: 'Per Bulan', value: `+${monthlyGain} kg`, icon: '🗓️', color: '#a855f7' },
-              { label: 'Hari Tersisa', value: `${daysNeeded} hari`, icon: '⏰', color: '#f97316' },
+              { label: 'Perlu Naik', value: `${(targetWeight - currentWeight).toFixed(1)} kg`, Icon: Scale, color: '#22c55e' },
+              { label: 'Per Minggu', value: `+${weeklyGain} kg`, Icon: CalendarDays, color: '#3b82f6' },
+              { label: 'Per Bulan', value: `+${monthlyGain} kg`, Icon: CalendarRange, color: '#a855f7' },
+              { label: 'Hari Tersisa', value: `${daysNeeded} hari`, Icon: Clock, color: '#f97316' },
             ].map((s, i) => (
               <div key={i} className="stat-card text-center">
-                <div className="text-2xl mb-1">{s.icon}</div>
+                <div className="flex justify-center mb-1"><s.Icon size={20} color={s.color} /></div>
                 <div className="text-lg font-black" style={{ color: s.color }}>{s.value}</div>
                 <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{s.label}</div>
               </div>
@@ -182,15 +182,16 @@ export default function WeightPredictor() {
             </div>
             <div className="space-y-2">
               {[
-                '🥩 Konsumsi protein 1.8-2.2g per kg berat badan setiap hari',
-                '🏋️ Latihan beban minimal 3x seminggu untuk maximize muscle gain',
-                '😴 Tidur 7-9 jam per malam untuk recovery dan pertumbuhan otot',
-                '📈 Surplus 500 kcal adalah sweet spot untuk lean bulk',
-                '💧 Minum 3-4 liter air per hari untuk mendukung metabolisme',
-                '📊 Ukur berat badan di waktu yang sama setiap hari (pagi setelah bangun)',
+                { Icon: Dumbbell,  text: 'Konsumsi protein 1.8-2.2g per kg berat badan setiap hari', color: '#3b82f6' },
+                { Icon: TrendingUp,text: 'Latihan beban minimal 3x seminggu untuk maximize muscle gain', color: '#22c55e' },
+                { Icon: BedDouble, text: 'Tidur 7-9 jam per malam untuk recovery dan pertumbuhan otot', color: '#a855f7' },
+                { Icon: Zap,       text: 'Surplus 500 kcal adalah sweet spot untuk lean bulk', color: '#f97316' },
+                { Icon: Droplets,  text: 'Minum 3-4 liter air per hari untuk mendukung metabolisme', color: '#06b6d4' },
+                { Icon: BarChart2, text: 'Ukur berat badan di waktu yang sama setiap hari (pagi setelah bangun)', color: '#22c55e' },
               ].map((tip, i) => (
                 <div key={i} className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  <span>{tip}</span>
+                  <tip.Icon size={15} color={tip.color} className="flex-shrink-0 mt-0.5" />
+                  <span>{tip.text}</span>
                 </div>
               ))}
             </div>
@@ -198,10 +199,8 @@ export default function WeightPredictor() {
         </>
       ) : (
         <div className="card empty-state p-12">
-          <div className="empty-state-icon">🎯</div>
-          <div className="font-semibold" style={{ color: 'var(--text-secondary)' }}>
-            Target berat harus lebih tinggi dari berat sekarang
-          </div>
+          <div className="empty-state-icon"><Target size={32} color="var(--text-muted)" /></div>
+          <div className="font-semibold" style={{ color: 'var(--text-secondary)' }}>Target berat harus lebih tinggi dari berat sekarang</div>
         </div>
       )}
     </div>

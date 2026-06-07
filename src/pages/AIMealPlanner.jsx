@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { Wand2, Loader2, Plus, RefreshCw, Zap } from 'lucide-react'
+import { Wand2, Loader2, Plus, RefreshCw, Zap, Sunrise, Sun, Moon, Cookie, BarChart2, AlertTriangle } from 'lucide-react'
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY
 
@@ -166,14 +166,14 @@ export default function AIMealPlanner() {
         }
       })
     })
-    alert('✅ Menu berhasil ditambahkan ke log hari ini!')
+    alert('Menu berhasil ditambahkan ke log hari ini!')
   }
 
   const mealIcons = {
-    breakfast: { emoji: '🌅', label: 'Sarapan', color: '#f97316' },
-    lunch: { emoji: '☀️', label: 'Makan Siang', color: '#22c55e' },
-    dinner: { emoji: '🌙', label: 'Makan Malam', color: '#3b82f6' },
-    snack: { emoji: '🍪', label: 'Snack', color: '#a855f7' },
+    breakfast: { Icon: Sunrise, label: 'Sarapan',    color: '#f97316' },
+    lunch:     { Icon: Sun,     label: 'Makan Siang', color: '#22c55e' },
+    dinner:    { Icon: Moon,    label: 'Makan Malam', color: '#3b82f6' },
+    snack:     { Icon: Cookie,  label: 'Snack',       color: '#a855f7' },
   }
 
   return (
@@ -194,7 +194,7 @@ export default function AIMealPlanner() {
         </div>
         <div>
           <div className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-            {hasApiKey ? '✅ Gemini AI Aktif' : '📋 Mode Lokal (Template)'}
+            {hasApiKey ? 'Gemini AI Aktif' : 'Mode Lokal (Template)'}
           </div>
           <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
             {hasApiKey
@@ -205,8 +205,8 @@ export default function AIMealPlanner() {
       </div>
 
       {aiError && (
-        <div className="rounded-xl p-3 text-sm" style={{ background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.2)', color: '#f97316' }}>
-          ⚠️ {aiError}
+        <div className="rounded-xl p-3 text-sm flex items-center gap-1.5" style={{ background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.2)', color: '#f97316' }}>
+          <AlertTriangle size={14} /> {aiError}
         </div>
       )}
 
@@ -260,8 +260,8 @@ export default function AIMealPlanner() {
           <div className="rounded-2xl p-5 text-white"
                style={{ background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)', boxShadow: '0 8px 24px rgba(34,197,94,0.35)' }}>
             <div className="flex items-center gap-2 mb-3">
-              <span className="font-semibold">📊 Ringkasan Menu Hari Ini</span>
-              {usedAI && <span className="badge" style={{ background: 'rgba(255,255,255,0.2)', color: 'white', fontSize: '10px' }}>✨ Gemini AI</span>}
+              <span className="font-semibold flex items-center gap-2"><BarChart2 size={16} /> Ringkasan Menu Hari Ini</span>
+              {usedAI && <span className="badge flex items-center gap-1" style={{ background: 'rgba(255,255,255,0.2)', color: 'white', fontSize: '10px' }}>Gemini AI</span>}
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="text-center">
@@ -294,13 +294,14 @@ export default function AIMealPlanner() {
             const mealData = plan[mealType]
             if (!mealData) return null
             const icon = mealIcons[mealType]
+            const MealIcon = icon.Icon
             return (
               <div key={mealType} className="card p-5">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                          style={{ background: `${icon.color}15` }}>
-                      {icon.emoji}
+                      <MealIcon size={18} style={{ color: icon.color }} />
                     </div>
                     <div>
                       <div className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{icon.label}</div>

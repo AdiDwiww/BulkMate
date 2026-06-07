@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useApp } from '../context/AppContext'
-import { Camera, Upload, Loader2, Plus, Edit3, CheckCircle, X, Zap } from 'lucide-react'
+import { Camera, Upload, Loader2, Plus, Edit3, CheckCircle, X, Zap, Sunrise, Sun, Moon, Cookie, AlertTriangle, RefreshCw } from 'lucide-react'
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY
 
@@ -215,12 +215,12 @@ export default function AIFoodScanner() {
   const totalCals = result?.foods.reduce((s, f) => s + (f.calories || 0), 0) || 0
   const totalProtein = result?.foods.reduce((s, f) => s + (f.protein || 0), 0) || 0
 
-  const mealTypes = {
-    breakfast: '🌅 Sarapan',
-    lunch: '☀️ Makan Siang',
-    dinner: '🌙 Makan Malam',
-    snack: '🍪 Snack',
-  }
+  const mealTypes = [
+    { key: 'breakfast', label: 'Sarapan', Icon: Sunrise },
+    { key: 'lunch',     label: 'Makan Siang', Icon: Sun },
+    { key: 'dinner',    label: 'Makan Malam', Icon: Moon },
+    { key: 'snack',     label: 'Snack', Icon: Cookie },
+  ]
 
   return (
     <div className="animate-fade-in space-y-5">
@@ -240,7 +240,7 @@ export default function AIFoodScanner() {
         </div>
         <div>
           <div className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-            {hasApiKey ? '✅ Gemini Vision AI Aktif' : '🔮 Mode Demo (Simulasi)'}
+            {hasApiKey ? 'Gemini Vision AI Aktif' : 'Mode Demo (Simulasi)'}
           </div>
           <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
             {hasApiKey
@@ -268,7 +268,7 @@ export default function AIFoodScanner() {
               <X size={16} />
             </button>
             <div className="absolute bottom-3 left-3">
-              <div className="badge badge-green text-xs">📷 {image?.name || 'Foto dimuat'}</div>
+              <div className="badge badge-green text-xs flex items-center gap-1"><Camera size={10} /> {image?.name || 'Foto dimuat'}</div>
             </div>
           </div>
         ) : (
@@ -318,7 +318,7 @@ export default function AIFoodScanner() {
       {/* Error */}
       {error && (
         <div className="rounded-2xl p-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-          <div className="text-sm font-semibold text-red-500">⚠️ {error}</div>
+          <div className="text-sm font-semibold text-red-500 flex items-center gap-1.5"><AlertTriangle size={14} /> {error}</div>
         </div>
       )}
 
@@ -336,7 +336,7 @@ export default function AIFoodScanner() {
             </div>
             <div>
               <div className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-                {result.confidence >= 85 ? '✅ Teridentifikasi dengan baik' : '⚠️ Kepercayaan sedang'}
+                {result.confidence >= 85 ? 'Teridentifikasi dengan baik' : 'Kepercayaan sedang'}
                 {hasApiKey && <span className="badge badge-green ml-2 text-xs">Gemini AI</span>}
               </div>
               <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{result.description}</div>
@@ -419,15 +419,16 @@ export default function AIFoodScanner() {
           <div>
             <label className="label">Tambahkan ke waktu makan</label>
             <div className="grid grid-cols-2 gap-2">
-              {Object.entries(mealTypes).map(([key, label]) => (
+              {mealTypes.map(({ key, label, Icon }) => (
                 <button key={key} onClick={() => setMealType(key)}
-                  className="px-3 py-2.5 rounded-xl text-sm border transition-all text-left"
+                  className="px-3 py-2.5 rounded-xl text-sm border transition-all flex items-center gap-2"
                   style={{
                     background: mealType === key ? 'rgba(34,197,94,0.08)' : 'var(--bg-secondary)',
                     borderColor: mealType === key ? '#22c55e' : 'var(--border-color)',
                     color: mealType === key ? '#22c55e' : 'var(--text-secondary)',
                     fontWeight: mealType === key ? 600 : 500,
                   }}>
+                  <Icon size={14} />
                   {label}
                 </button>
               ))}
@@ -438,13 +439,13 @@ export default function AIFoodScanner() {
             <div className="rounded-2xl p-4 flex items-center gap-3 animate-scale-in"
                  style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)' }}>
               <CheckCircle size={20} color="#22c55e" />
-              <span className="font-semibold text-sm text-green-500">✅ Berhasil ditambahkan ke log hari ini!</span>
+              <span className="font-semibold text-sm text-green-500">Berhasil ditambahkan ke log hari ini!</span>
             </div>
           ) : (
             <div className="flex gap-3">
               <button onClick={() => { setResult(null); setImageUrl(null); setImage(null) }}
-                className="btn-secondary flex-1">
-                🔄 Scan Ulang
+                className="btn-secondary flex-1 py-2">
+                <span className="flex items-center justify-center gap-1.5"><RefreshCw size={14} /> Scan Ulang</span>
               </button>
               <button onClick={handleAddToLog} className="btn-primary flex-1 flex items-center justify-center gap-2">
                 <Plus size={16} />

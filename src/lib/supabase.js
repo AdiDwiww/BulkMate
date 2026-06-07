@@ -4,7 +4,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('⚠️ Supabase credentials tidak ditemukan. Running in local-only mode.')
+  console.warn('Supabase credentials tidak ditemukan. Running in local-only mode.')
 }
 
 export const supabase = createClient(

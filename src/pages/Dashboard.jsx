@@ -1,6 +1,6 @@
 import { useApp } from '../context/AppContext'
 import { calculateTotals, getGreeting, formatDate, MEAL_TYPES, getProgressColor } from '../utils/helpers'
-import { TrendingUp, Flame, Dumbbell, Droplets, Scale, Plus, ChevronRight, Zap, Award } from 'lucide-react'
+import { TrendingUp, Flame, Dumbbell, Droplets, Scale, Plus, ChevronRight, Zap, Award, Wheat, Sunrise, Sun, Moon, Cookie, Utensils } from 'lucide-react'
 
 // Circular Progress Component
 function CircularProgress({ value, max, size = 100, strokeWidth = 10, color = '#22c55e', label, sublabel }) {
@@ -51,14 +51,20 @@ function CircularProgress({ value, max, size = 100, strokeWidth = 10, color = '#
   )
 }
 
+// Icon map untuk meal types
+const MEAL_ICON_MAP = { Sunrise, Sun, Moon, Cookie }
+
 // Macro card component
-function MacroCard({ label, current, target, unit, color, emoji }) {
+function MacroCard({ label, current, target, unit, color, icon: IconComp }) {
   const pct = Math.min((current / target) * 100, 100)
   return (
     <div className="stat-card">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-lg">{emoji}</span>
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+               style={{ background: `${color}15` }}>
+            <IconComp size={15} style={{ color }} />
+          </div>
           <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>{label}</span>
         </div>
         <span className="badge" style={{ background: `${color}15`, color }}>
@@ -124,7 +130,7 @@ export default function Dashboard({ onPageChange }) {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-            {getGreeting()}, {profile?.name?.split(' ')[0] || 'Sobat'}! 👋
+            {getGreeting()}, {profile?.name?.split(' ')[0] || 'Sobat'}!
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
             {formatDate(currentDate)}
@@ -208,9 +214,9 @@ export default function Dashboard({ onPageChange }) {
 
       {/* Macros Grid */}
       <div className="grid grid-cols-3 gap-3">
-        <MacroCard label="Protein" current={totals.protein} target={proteinTarget} unit="g" color="#3b82f6" emoji="💪" />
-        <MacroCard label="Karbo" current={totals.carbs} target={carbTarget} unit="g" color="#f97316" emoji="🌾" />
-        <MacroCard label="Lemak" current={totals.fat} target={fatTarget} unit="g" color="#a855f7" emoji="🥑" />
+        <MacroCard label="Protein" current={totals.protein} target={proteinTarget} unit="g" color="#3b82f6" icon={Dumbbell} />
+        <MacroCard label="Karbo" current={totals.carbs} target={carbTarget} unit="g" color="#f97316" icon={Wheat} />
+        <MacroCard label="Lemak" current={totals.fat} target={fatTarget} unit="g" color="#a855f7" icon={Droplets} />
       </div>
 
       {/* Stats Row */}
@@ -266,6 +272,7 @@ export default function Dashboard({ onPageChange }) {
         <div className="space-y-3">
           {Object.entries(mealGroups).map(([type, logs]) => {
             const mealInfo = MEAL_TYPES[type]
+            const MealIcon = MEAL_ICON_MAP[mealInfo.icon]
             const mealCals = logs.reduce((s, l) => s + (l.calories || 0), 0)
             if (logs.length === 0) return null
             return (
@@ -273,7 +280,10 @@ export default function Dashboard({ onPageChange }) {
                 <div className="flex items-center justify-between py-2 px-3 rounded-xl"
                      style={{ background: 'var(--bg-secondary)' }}>
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">{mealInfo.emoji}</span>
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                         style={{ background: `${mealInfo.color}15` }}>
+                      {MealIcon && <MealIcon size={16} style={{ color: mealInfo.color }} />}
+                    </div>
                     <div>
                       <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{mealInfo.label}</div>
                       <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{logs.length} item</div>
@@ -289,7 +299,7 @@ export default function Dashboard({ onPageChange }) {
 
           {todayLogs.length === 0 && (
             <div className="empty-state py-8">
-              <div className="empty-state-icon">🍽️</div>
+              <div className="empty-state-icon"><Utensils size={28} color="var(--text-muted)" /></div>
               <div className="font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>Belum ada log makanan</div>
               <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Mulai catat makanan pertamamu hari ini!</div>
             </div>
@@ -312,9 +322,9 @@ export default function Dashboard({ onPageChange }) {
           </div>
           <div className="flex flex-wrap gap-2">
             {[
-              { label: '🥛 2 gelas susu', cal: 336 },
-              { label: '🍌 2 pisang', cal: 214 },
-              { label: '🍞 4 roti', cal: 318 },
+              { label: '2 gelas susu', cal: 336 },
+              { label: '2 pisang', cal: 214 },
+              { label: '4 roti', cal: 318 },
             ].filter(item => item.cal <= remaining + 100).map(item => (
               <div key={item.label} className="badge badge-blue">
                 {item.label} <span className="opacity-70">+{item.cal}kcal</span>

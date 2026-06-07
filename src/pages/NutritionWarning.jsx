@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useApp } from '../context/AppContext'
 import { calculateTotals, BULKING_FOODS } from '../utils/helpers'
-import { Brain, AlertTriangle, CheckCircle, TrendingUp, TrendingDown, Zap, Info } from 'lucide-react'
+import { Brain, AlertTriangle, CheckCircle, TrendingUp, TrendingDown, Zap, Info, Flame, Dumbbell, Scale, CalendarDays, Sparkles, BarChart2, Beef, Milk, Clock, AlertCircle } from 'lucide-react'
 
 export default function NutritionWarning() {
   const { state } = useApp()
@@ -27,7 +27,7 @@ export default function NutritionWarning() {
     if (calPct < 50) {
       issues.push({
         type: 'error',
-        icon: '🔥',
+        Icon: Flame,
         title: 'Kalori Hari Ini Sangat Kurang!',
         desc: `Baru ${Math.round(totals.calories)} kcal dari target ${calorieTarget} kcal. Kurang ${Math.round(calorieTarget - totals.calories)} kcal lagi.`,
         action: 'Tambah makan segera!',
@@ -36,7 +36,7 @@ export default function NutritionWarning() {
     } else if (calPct < 80) {
       issues.push({
         type: 'warning',
-        icon: '⚠️',
+        Icon: AlertTriangle,
         title: 'Kalori Hari Ini Masih Kurang',
         desc: `Sudah ${Math.round(calPct)}% dari target. Masih kurang ${Math.round(calorieTarget - totals.calories)} kcal.`,
         action: 'Tambah 1-2 porsi makan lagi',
@@ -45,7 +45,7 @@ export default function NutritionWarning() {
     } else if (calPct > 120) {
       issues.push({
         type: 'info',
-        icon: '📊',
+        Icon: BarChart2,
         title: 'Kalori Melebihi Target',
         desc: `Sudah ${Math.round(totals.calories)} kcal, melebihi target ${calorieTarget} kcal. Excess ${Math.round(totals.calories - calorieTarget)} kcal.`,
         action: 'Kurangi porsi makan berikutnya',
@@ -56,7 +56,7 @@ export default function NutritionWarning() {
     if (proteinPct < 60) {
       issues.push({
         type: 'error',
-        icon: '💪',
+        Icon: Dumbbell,
         title: 'Protein Sangat Rendah',
         desc: `Hanya ${Math.round(totals.protein)}g protein dari target ${proteinTarget}g. Ini akan menghambat pertumbuhan otot.`,
         action: 'Tambah sumber protein: ayam, telur, tempe',
@@ -65,7 +65,7 @@ export default function NutritionWarning() {
     } else if (proteinPct < 80) {
       issues.push({
         type: 'warning',
-        icon: '🥩',
+        Icon: Beef,
         title: 'Protein Masih Kurang',
         desc: `Sudah ${Math.round(totals.protein)}g dari ${proteinTarget}g target. Masih kurang ${Math.round(proteinTarget - totals.protein)}g protein.`,
         action: 'Tambah 2 butir telur atau 100g ayam',
@@ -76,7 +76,7 @@ export default function NutritionWarning() {
     if (fatPct > 140) {
       issues.push({
         type: 'warning',
-        icon: '🧈',
+        Icon: AlertCircle,
         title: 'Konsumsi Lemak Berlebihan',
         desc: `Lemak hari ini ${Math.round(totals.fat)}g, melebihi target ${fatTarget}g. Terlalu banyak lemak bisa memperlambat pencernaan.`,
         action: 'Pilih metode masak yang lebih sehat',
@@ -101,7 +101,7 @@ export default function NutritionWarning() {
     if (lowProteinDays >= 4) {
       issues.push({
         type: 'error',
-        icon: '📅',
+        Icon: CalendarDays,
         title: 'Protein Rendah Selama 7 Hari',
         desc: `${lowProteinDays} dari 7 hari terakhir, konsumsi protein di bawah 70% target. Rata-rata hanya ${Math.round(avgProtein7)}g/hari.`,
         action: 'Prioritaskan sumber protein di setiap makan',
@@ -112,7 +112,7 @@ export default function NutritionWarning() {
     if (avgCal7 < calorieTarget * 0.7) {
       issues.push({
         type: 'warning',
-        icon: '📉',
+        Icon: TrendingDown,
         title: 'Rata-rata Kalori Minggu Ini Rendah',
         desc: `Rata-rata kalori 7 hari: ${Math.round(avgCal7)} kcal. Jauh di bawah target ${calorieTarget} kcal/hari.`,
         action: 'Pertimbangkan menambahkan snack bergizi',
@@ -130,7 +130,7 @@ export default function NutritionWarning() {
         if (weightGain < 0.1) {
           issues.push({
             type: 'warning',
-            icon: '⚖️',
+            Icon: Scale,
             title: 'Berat Badan Tidak Naik',
             desc: `Berat badan minggu ini hanya naik ${weightGain.toFixed(2)} kg. Surplus kalori mungkin perlu ditingkatkan.`,
             action: 'Coba tambah 200-300 kcal dari target saat ini',
@@ -143,7 +143,7 @@ export default function NutritionWarning() {
     if (issues.length === 0) {
       issues.push({
         type: 'success',
-        icon: '🎉',
+        Icon: Sparkles,
         title: 'Nutrisi Hari Ini On Track!',
         desc: `Kalori: ${Math.round(totals.calories)} kcal (${Math.round(calPct)}%), Protein: ${Math.round(totals.protein)}g (${Math.round(proteinPct)}%). Pertahankan!`,
         action: null,
@@ -219,7 +219,9 @@ export default function NutritionWarning() {
             <div key={i} className="rounded-2xl p-4 animate-slide-up"
                  style={{ background: style.bg, border: `1px solid ${style.border}`, animationDelay: `${i * 80}ms` }}>
               <div className="flex items-start gap-3">
-                <div className="text-2xl flex-shrink-0">{w.icon}</div>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: style.iconBg }}>
+                  <w.Icon size={18} color={style.color} />
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{w.title}</div>
                   <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{w.desc}</div>
@@ -278,14 +280,14 @@ export default function NutritionWarning() {
         </div>
         <div className="space-y-3">
           {[
-            { icon: '🥩', tip: 'Makan protein di setiap waktu makan - target 30-40g per sesi', color: '#3b82f6' },
-            { icon: '⏰', tip: 'Makan setiap 3-4 jam untuk menjaga anabolisme', color: '#22c55e' },
-            { icon: '🥤', tip: 'Minum susu atau protein shake sebelum tidur untuk nocturnal protein', color: '#a855f7' },
-            { icon: '🏋️', tip: 'Progressive overload di gym untuk memastikan kalori masuk ke otot, bukan lemak', color: '#f97316' },
+            { Icon: Dumbbell, tip: 'Makan protein di setiap waktu makan - target 30-40g per sesi', color: '#3b82f6' },
+            { Icon: Clock, tip: 'Makan setiap 3-4 jam untuk menjaga anabolisme', color: '#22c55e' },
+            { Icon: Milk, tip: 'Minum susu atau protein shake sebelum tidur untuk nocturnal protein', color: '#a855f7' },
+            { Icon: Target, tip: 'Progressive overload di gym untuk memastikan kalori masuk to otot, bukan lemak', color: '#f97316' },
           ].map((t, i) => (
-            <div key={i} className="flex items-start gap-3 py-2 px-3 rounded-xl"
+            <div key={i} className="flex items-start gap-3 py-2.5 px-3 rounded-xl"
                  style={{ background: `${t.color}08` }}>
-              <span className="text-lg flex-shrink-0">{t.icon}</span>
+              <t.Icon size={16} color={t.color} className="flex-shrink-0 mt-0.5" />
               <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t.tip}</span>
             </div>
           ))}

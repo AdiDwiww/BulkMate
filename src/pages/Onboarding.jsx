@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { calculateBMR, calculateTDEE, calculateProteinTarget, ACTIVITY_LEVELS } from '../utils/helpers'
-import { ChevronRight, ChevronLeft, CheckCircle, Zap, User, Target, Activity } from 'lucide-react'
+import { ChevronRight, ChevronLeft, CheckCircle, Zap, User, Target, Activity, Flame, Bot, BarChart2, Leaf, Dumbbell, Beef, Star, UserCircle2, UserCircle } from 'lucide-react'
 
 const steps = [
-  { id: 0, label: 'Selamat Datang', icon: '👋' },
-  { id: 1, label: 'Data Diri', icon: '👤' },
-  { id: 2, label: 'Aktivitas', icon: '🏃' },
-  { id: 3, label: 'Target', icon: '🎯' },
-  { id: 4, label: 'Selesai!', icon: '🎉' },
+  { id: 0, label: 'Selamat Datang', Icon: Zap },
+  { id: 1, label: 'Data Diri', Icon: User },
+  { id: 2, label: 'Aktivitas', Icon: Activity },
+  { id: 3, label: 'Target', Icon: Target },
+  { id: 4, label: 'Selesai!', Icon: Star },
 ]
 
 export default function Onboarding({ onComplete }) {
@@ -85,7 +85,7 @@ export default function Onboarding({ onComplete }) {
                   transform: i === step ? 'scale(1.15)' : 'scale(1)',
                   boxShadow: i === step ? '0 4px 12px rgba(34,197,94,0.4)' : 'none',
                 }}>
-                {i < step ? <CheckCircle size={14} /> : s.icon}
+                {i < step ? <CheckCircle size={14} /> : <s.Icon size={14} />}
               </div>
               {i < steps.length - 1 && (
                 <div className="w-8 h-0.5 rounded-full transition-all duration-300"
@@ -106,7 +106,7 @@ export default function Onboarding({ onComplete }) {
                 <Zap size={38} color="white" />
               </div>
               <h1 className="text-2xl font-black mb-2" style={{ color: 'var(--text-primary)' }}>
-                Selamat Datang di BulkMate! 💪
+                Selamat Datang di BulkMate!
               </h1>
               <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--text-muted)' }}>
                 Asisten personal untuk membantu kamu menaikkan berat badan secara sehat.
@@ -114,13 +114,15 @@ export default function Onboarding({ onComplete }) {
               </p>
               <div className="grid grid-cols-3 gap-3 mb-6">
                 {[
-                  { emoji: '🔥', label: 'Kalkulator Kalori', desc: 'Otomatis' },
-                  { emoji: '🤖', label: 'AI Meal Planner', desc: 'Gemini AI' },
-                  { emoji: '📊', label: 'Progress Tracker', desc: 'Real-time' },
+                  { Icon: Flame, label: 'Kalkulator Kalori', desc: 'Otomatis', color: '#f97316' },
+                  { Icon: Bot, label: 'AI Meal Planner', desc: 'Gemini AI', color: '#3b82f6' },
+                  { Icon: BarChart2, label: 'Progress Tracker', desc: 'Real-time', color: '#22c55e' },
                 ].map(f => (
                   <div key={f.label} className="p-3 rounded-xl text-center"
                        style={{ background: 'var(--bg-secondary)' }}>
-                    <div className="text-2xl mb-1">{f.emoji}</div>
+                    <div className="flex justify-center mb-1">
+                      <f.Icon size={22} color={f.color} />
+                    </div>
                     <div className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{f.label}</div>
                     <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{f.desc}</div>
                   </div>
@@ -133,7 +135,7 @@ export default function Onboarding({ onComplete }) {
           {step === 1 && (
             <div className="animate-fade-in space-y-4">
               <div className="text-center mb-4">
-                <div className="text-3xl mb-2">👤</div>
+                <div className="flex justify-center mb-2"><User size={32} color="#22c55e" /></div>
                 <h2 className="text-xl font-black" style={{ color: 'var(--text-primary)' }}>Data Diri</h2>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Digunakan untuk menghitung BMR & kebutuhan nutrisi</p>
               </div>
@@ -145,14 +147,15 @@ export default function Onboarding({ onComplete }) {
               <div>
                 <label className="label">Jenis Kelamin</label>
                 <div className="grid grid-cols-2 gap-3">
-                  {[{ val: 'male', label: '👨 Laki-laki' }, { val: 'female', label: '👩 Perempuan' }].map(g => (
+                  {[{ val: 'male', label: 'Laki-laki', Icon: UserCircle }, { val: 'female', label: 'Perempuan', Icon: UserCircle2 }].map(g => (
                     <button key={g.val} onClick={() => update('gender', g.val)}
-                      className="py-3 rounded-xl border text-sm font-semibold transition-all"
+                      className="py-3 rounded-xl border text-sm font-semibold transition-all flex items-center justify-center gap-2"
                       style={{
                         background: form.gender === g.val ? 'rgba(34,197,94,0.08)' : 'var(--bg-secondary)',
                         borderColor: form.gender === g.val ? '#22c55e' : 'var(--border-color)',
                         color: form.gender === g.val ? '#22c55e' : 'var(--text-secondary)',
                       }}>
+                      <g.Icon size={16} />
                       {g.label}
                     </button>
                   ))}
@@ -182,7 +185,7 @@ export default function Onboarding({ onComplete }) {
           {step === 2 && (
             <div className="animate-fade-in space-y-4">
               <div className="text-center mb-4">
-                <div className="text-3xl mb-2">🏃</div>
+                <div className="flex justify-center mb-2"><Activity size={32} color="#22c55e" /></div>
                 <h2 className="text-xl font-black" style={{ color: 'var(--text-primary)' }}>Tingkat Aktivitas</h2>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Berapa sering kamu berolahraga per minggu?</p>
               </div>
@@ -214,7 +217,7 @@ export default function Onboarding({ onComplete }) {
           {step === 3 && (
             <div className="animate-fade-in space-y-4">
               <div className="text-center mb-4">
-                <div className="text-3xl mb-2">🎯</div>
+                <div className="flex justify-center mb-2"><Target size={32} color="#22c55e" /></div>
                 <h2 className="text-xl font-black" style={{ color: 'var(--text-primary)' }}>Target Bulking</h2>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Berapa berat badan yang ingin kamu capai?</p>
               </div>
@@ -227,9 +230,9 @@ export default function Onboarding({ onComplete }) {
                 <label className="label">Tipe Bulking</label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { val: 250, emoji: '🥗', label: 'Clean', desc: '+250 kcal' },
-                    { val: 500, emoji: '🍗', label: 'Lean', desc: '+500 kcal' },
-                    { val: 750, emoji: '🍔', label: 'Dirty', desc: '+750 kcal' },
+                    { val: 250, Icon: Leaf, label: 'Clean', desc: '+250 kcal', color: '#22c55e' },
+                    { val: 500, Icon: Dumbbell, label: 'Lean', desc: '+500 kcal', color: '#3b82f6' },
+                    { val: 750, Icon: Beef, label: 'Dirty', desc: '+750 kcal', color: '#f97316' },
                   ].map(opt => (
                     <button key={opt.val} onClick={() => update('surplus', opt.val)}
                       className="py-3 rounded-xl border text-center transition-all"
@@ -237,7 +240,9 @@ export default function Onboarding({ onComplete }) {
                         background: form.surplus === opt.val ? 'rgba(34,197,94,0.08)' : 'var(--bg-secondary)',
                         borderColor: form.surplus === opt.val ? '#22c55e' : 'var(--border-color)',
                       }}>
-                      <div className="text-xl mb-0.5">{opt.emoji}</div>
+                      <div className="flex justify-center mb-0.5">
+                        <opt.Icon size={20} color={form.surplus === opt.val ? opt.color : 'var(--text-muted)'} />
+                      </div>
                       <div className="text-xs font-bold" style={{ color: form.surplus === opt.val ? '#22c55e' : 'var(--text-primary)' }}>
                         {opt.label}
                       </div>
@@ -252,7 +257,7 @@ export default function Onboarding({ onComplete }) {
                 <div className="rounded-2xl p-4"
                      style={{ background: 'linear-gradient(135deg, rgba(34,197,94,0.08), rgba(34,197,94,0.04))', border: '1px solid rgba(34,197,94,0.15)' }}>
                   <div className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: '#22c55e' }}>
-                    ✨ Hasil Kalkulasi Untukmu
+                    Hasil Kalkulasi Untukmu
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     {[
@@ -280,7 +285,7 @@ export default function Onboarding({ onComplete }) {
                 <CheckCircle size={38} color="white" />
               </div>
               <h2 className="text-2xl font-black mb-2" style={{ color: 'var(--text-primary)' }}>
-                Siap Bulking, {form.name}! 🎉
+                Siap Bulking, {form.name}!
               </h2>
               <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
                 Target kalorimu sudah disiapkan. Mari mulai perjalanan bulkingmu!
@@ -289,10 +294,10 @@ export default function Onboarding({ onComplete }) {
                    style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.15)' }}>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { label: '⚡ Target Kalori', value: `${calorieTarget} kcal/hari` },
-                    { label: '💪 Target Protein', value: `${proteinTarget}g/hari` },
-                    { label: '⚖️ Berat Sekarang', value: `${form.weight} kg` },
-                    { label: '🎯 Target Berat', value: `${form.target_weight} kg` },
+                    { label: 'Target Kalori', value: `${calorieTarget} kcal/hari` },
+                    { label: 'Target Protein', value: `${proteinTarget}g/hari` },
+                    { label: 'Berat Sekarang', value: `${form.weight} kg` },
+                    { label: 'Target Berat', value: `${form.target_weight} kg` },
                   ].map(item => (
                     <div key={item.label}>
                       <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{item.label}</div>

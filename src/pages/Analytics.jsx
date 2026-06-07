@@ -5,7 +5,7 @@ import {
   AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts'
-import { BarChart3, TrendingUp, Download, Flame, Dumbbell, Scale, Wallet } from 'lucide-react'
+import { BarChart3, TrendingUp, Download, Flame, Dumbbell, Scale, Wallet, CalendarDays, PieChartIcon } from 'lucide-react'
 
 export default function Analytics() {
   const { state } = useApp()
@@ -139,14 +139,14 @@ export default function Analytics() {
       {/* Key Metrics */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { icon: '🔥', label: 'Avg. Kalori/Hari', value: `${avgCalories} kcal`, pct: Math.round((avgCalories/calorieTarget)*100), color: '#22c55e' },
-          { icon: '💪', label: 'Avg. Protein/Hari', value: `${avgProtein}g`, pct: Math.round((Number(avgProtein)/proteinTarget)*100), color: '#3b82f6' },
-          { icon: '⚖️', label: 'Total Kenaikan BB', value: `+${totalGain} kg`, pct: 100, color: '#a855f7' },
-          { icon: '📅', label: 'Konsistensi', value: `${consistency}%`, pct: consistency, color: '#f97316' },
+          { Icon: Flame,       label: 'Avg. Kalori/Hari',  value: `${avgCalories} kcal`, pct: Math.round((avgCalories/calorieTarget)*100), color: '#22c55e' },
+          { Icon: Dumbbell,    label: 'Avg. Protein/Hari', value: `${avgProtein}g`,       pct: Math.round((Number(avgProtein)/proteinTarget)*100), color: '#3b82f6' },
+          { Icon: Scale,       label: 'Total Kenaikan BB', value: `+${totalGain} kg`,     pct: 100, color: '#a855f7' },
+          { Icon: CalendarDays,label: 'Konsistensi',       value: `${consistency}%`,      pct: consistency, color: '#f97316' },
         ].map((m, i) => (
           <div key={i} className="stat-card">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-lg">{m.icon}</span>
+              <m.Icon size={16} color={m.color} />
               <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{m.label}</span>
             </div>
             <div className="font-black text-lg mb-2" style={{ color: m.color }}>{m.value}</div>
@@ -160,7 +160,7 @@ export default function Analytics() {
 
       {/* Calorie Chart */}
       <div className="card p-5">
-        <h2 className="font-bold mb-4" style={{ color: 'var(--text-primary)' }}>📊 Kalori 14 Hari Terakhir</h2>
+        <h2 className="font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}><BarChart3 size={16} color="#22c55e" /> Kalori 14 Hari Terakhir</h2>
         <ResponsiveContainer width="100%" height={200}>
           <AreaChart data={last14Days} margin={{ top: 5, right: 5, left: -25, bottom: 5 }}>
             <defs>
@@ -183,7 +183,7 @@ export default function Analytics() {
 
       {/* Protein Chart */}
       <div className="card p-5">
-        <h2 className="font-bold mb-4" style={{ color: 'var(--text-primary)' }}>💪 Protein 14 Hari Terakhir</h2>
+        <h2 className="font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}><Dumbbell size={16} color="#3b82f6" /> Protein 14 Hari Terakhir</h2>
         <ResponsiveContainer width="100%" height={180}>
           <BarChart data={last14Days} margin={{ top: 5, right: 5, left: -25, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
@@ -199,7 +199,7 @@ export default function Analytics() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Weight chart */}
         <div className="card p-5">
-          <h2 className="font-bold mb-4" style={{ color: 'var(--text-primary)' }}>⚖️ Berat Badan</h2>
+          <h2 className="font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}><Scale size={16} color="#a855f7" /> Berat Badan</h2>
           {weightData.length >= 2 ? (
             <ResponsiveContainer width="100%" height={160}>
               <LineChart data={weightData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
@@ -213,7 +213,7 @@ export default function Analytics() {
             </ResponsiveContainer>
           ) : (
             <div className="empty-state h-40">
-              <div className="empty-state-icon">⚖️</div>
+              <div className="empty-state-icon"><Scale size={28} color="var(--text-muted)" /></div>
               <div className="text-sm">Belum cukup data</div>
             </div>
           )}
@@ -221,7 +221,7 @@ export default function Analytics() {
 
         {/* Macro pie */}
         <div className="card p-5">
-          <h2 className="font-bold mb-4" style={{ color: 'var(--text-primary)' }}>🥗 Makro Hari Ini</h2>
+          <h2 className="font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}><PieChartIcon size={16} color="#f97316" /> Makro Hari Ini</h2>
           {pieMacroData.length > 0 ? (
             <div className="flex items-center gap-4">
               <ResponsiveContainer width={140} height={140}>
@@ -248,7 +248,7 @@ export default function Analytics() {
             </div>
           ) : (
             <div className="empty-state h-36">
-              <div className="empty-state-icon">🥗</div>
+              <div className="empty-state-icon"><PieChartIcon size={28} color="var(--text-muted)" /></div>
               <div className="text-sm">Belum ada data hari ini</div>
             </div>
           )}
@@ -258,7 +258,7 @@ export default function Analytics() {
       {/* Expense Chart */}
       <div className="card p-5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold" style={{ color: 'var(--text-primary)' }}>💰 Pengeluaran Makanan</h2>
+          <h2 className="font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}><Wallet size={16} color="#f97316" /> Pengeluaran Makanan</h2>
           <div className="text-sm font-bold text-green-500">Total: {formatCurrency(monthExpenses)}/bulan</div>
         </div>
         {last14Days.some(d => d.expense > 0) ? (
@@ -274,7 +274,7 @@ export default function Analytics() {
           </ResponsiveContainer>
         ) : (
           <div className="empty-state h-36">
-            <div className="empty-state-icon">💳</div>
+            <div className="empty-state-icon"><Wallet size={28} color="var(--text-muted)" /></div>
             <div className="text-sm">Belum ada data pengeluaran</div>
           </div>
         )}

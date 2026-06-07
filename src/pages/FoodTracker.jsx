@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { FOOD_DATABASE, MEAL_TYPES, calculateTotals, formatDate } from '../utils/helpers'
-import { Plus, Trash2, Search, X, Edit3, Clock, Flame } from 'lucide-react'
+import { Plus, Trash2, Search, X, Clock, Flame, Sunrise, Sun, Moon, Cookie } from 'lucide-react'
+
+const MEAL_ICON_MAP = { Sunrise, Sun, Moon, Cookie }
 
 function AddFoodModal({ onClose, onAdd, date, mealType }) {
   const [mode, setMode] = useState('search') // 'search' | 'manual'
@@ -61,12 +63,12 @@ function AddFoodModal({ onClose, onAdd, date, mealType }) {
         <div className="p-5 space-y-4">
           {/* Mode tabs */}
           <div className="tab-nav">
-            <button className={`tab-btn ${mode === 'search' ? 'active' : ''}`} onClick={() => setMode('search')}>
-              🔍 Cari Database
-            </button>
-            <button className={`tab-btn ${mode === 'manual' ? 'active' : ''}`} onClick={() => setMode('manual')}>
-              ✏️ Input Manual
-            </button>
+              <button className={`tab-btn ${mode === 'search' ? 'active' : ''}`} onClick={() => setMode('search')}>
+                Cari Database
+              </button>
+              <button className={`tab-btn ${mode === 'manual' ? 'active' : ''}`} onClick={() => setMode('manual')}>
+                Input Manual
+              </button>
           </div>
 
           {mode === 'search' ? (
@@ -260,9 +262,9 @@ export default function FoodTracker() {
           <div key={type} className="card p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                      style={{ background: `${meal.color}15` }}>
-                  {meal.emoji}
+                  {MEAL_ICON_MAP[meal.icon] && (() => { const I = MEAL_ICON_MAP[meal.icon]; return <I size={18} style={{ color: meal.color }} /> })()}
                 </div>
                 <div>
                   <div className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{meal.label}</div>

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
 import { formatCurrency, formatDateShort } from '../utils/helpers'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { Wallet, Plus, Trash2, X, TrendingUp, Coffee, ShoppingCart } from 'lucide-react'
+import { Wallet, Plus, Trash2, X, TrendingUp, Coffee, ShoppingCart, UtensilsCrossed, Cookie, Pill, CalendarDays, CalendarRange, CalendarCheck2 } from 'lucide-react'
 
 export default function BudgetTracker() {
   const { state, dispatch } = useApp()
@@ -17,11 +17,11 @@ export default function BudgetTracker() {
   })
 
   const categories = {
-    meal: { label: 'Makanan Utama', emoji: '🍚', color: '#22c55e' },
-    snack: { label: 'Jajan/Snack', emoji: '🍪', color: '#f97316' },
-    supplement: { label: 'Suplemen', emoji: '💊', color: '#3b82f6' },
-    grocery: { label: 'Belanja Bahan', emoji: '🛒', color: '#a855f7' },
-    drink: { label: 'Minuman', emoji: '☕', color: '#ec4899' },
+    meal: { label: 'Makanan Utama', Icon: UtensilsCrossed, color: '#22c55e' },
+    snack: { label: 'Jajan/Snack', Icon: Cookie, color: '#f97316' },
+    supplement: { label: 'Suplemen', Icon: Pill, color: '#3b82f6' },
+    grocery: { label: 'Belanja Bahan', Icon: ShoppingCart, color: '#a855f7' },
+    drink: { label: 'Minuman', Icon: Coffee, color: '#ec4899' },
   }
 
   const today = new Date().toISOString().split('T')[0]
@@ -79,12 +79,12 @@ export default function BudgetTracker() {
       {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Hari Ini', value: formatCurrency(dailyTotal), icon: '📅', color: '#22c55e' },
-          { label: 'Minggu Ini', value: formatCurrency(weeklyTotal), icon: '📆', color: '#3b82f6' },
-          { label: 'Bulan Ini', value: formatCurrency(monthlyTotal), icon: '🗓️', color: '#a855f7' },
+          { label: 'Hari Ini', value: formatCurrency(dailyTotal), Icon: CalendarDays, color: '#22c55e' },
+          { label: 'Minggu Ini', value: formatCurrency(weeklyTotal), Icon: CalendarRange, color: '#3b82f6' },
+          { label: 'Bulan Ini', value: formatCurrency(monthlyTotal), Icon: CalendarCheck2, color: '#a855f7' },
         ].map((s, i) => (
           <div key={i} className="stat-card text-center">
-            <div className="text-xl mb-1">{s.icon}</div>
+            <div className="flex justify-center mb-1"><s.Icon size={18} color={s.color} /></div>
             <div className="font-black text-sm" style={{ color: s.color }}>{s.value}</div>
             <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{s.label}</div>
           </div>
@@ -107,7 +107,7 @@ export default function BudgetTracker() {
           </ResponsiveContainer>
         ) : (
           <div className="empty-state h-40">
-            <div className="empty-state-icon">💰</div>
+            <div className="empty-state-icon"><Wallet size={28} color="var(--text-muted)" /></div>
             <div className="text-sm">Belum ada pengeluaran dicatat</div>
           </div>
         )}
@@ -120,7 +120,9 @@ export default function BudgetTracker() {
           <div className="space-y-3">
             {categoryBreakdown.map(cat => (
               <div key={cat.key} className="flex items-center gap-3">
-                <div className="text-xl w-8 flex-shrink-0">{cat.emoji}</div>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${cat.color}15` }}>
+                  <cat.Icon size={16} color={cat.color} />
+                </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{cat.label}</span>
@@ -150,7 +152,9 @@ export default function BudgetTracker() {
               return (
                 <div key={exp.id} className="flex items-center gap-3 py-2.5 px-3 rounded-xl"
                      style={{ background: 'var(--bg-secondary)' }}>
-                  <div className="text-xl flex-shrink-0">{cat.emoji}</div>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${cat.color}15` }}>
+                    <cat.Icon size={15} color={cat.color} />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm truncate" style={{ color: 'var(--text-primary)' }}>{exp.name}</div>
                     <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -171,7 +175,7 @@ export default function BudgetTracker() {
           </div>
         ) : (
           <div className="empty-state py-8">
-            <div className="empty-state-icon">💳</div>
+            <div className="empty-state-icon"><Wallet size={28} color="var(--text-muted)" /></div>
             <div className="font-semibold" style={{ color: 'var(--text-secondary)' }}>Belum ada pengeluaran</div>
           </div>
         )}
@@ -210,7 +214,7 @@ export default function BudgetTracker() {
                         borderColor: form.category === key ? cat.color : 'var(--border-color)',
                         color: form.category === key ? cat.color : 'var(--text-secondary)',
                       }}>
-                      <span>{cat.emoji}</span>
+                      <cat.Icon size={15} />
                       <span className="font-medium">{cat.label}</span>
                     </button>
                   ))}

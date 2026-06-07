@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { calculateBMR, calculateTDEE, calculateProteinTarget, ACTIVITY_LEVELS, categorizeBMI } from '../utils/helpers'
-import { Settings, Save, User, Target, Sun, Moon, Trash2, Download, LogOut } from 'lucide-react'
+import { Settings, Save, User, Target, Sun, Moon, Trash2, Download, LogOut, Zap } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 
 export default function SettingsPage() {
@@ -297,7 +297,7 @@ export default function SettingsPage() {
           <div className="card p-5 text-center">
             <div className="w-14 h-14 rounded-2xl gradient-green flex items-center justify-center mx-auto mb-3"
                  style={{ boxShadow: '0 4px 16px rgba(34,197,94,0.3)' }}>
-              <span className="text-2xl">⚡</span>
+              <Zap size={28} color="white" />
             </div>
             <div className="font-black text-lg" style={{ color: 'var(--text-primary)' }}>BulkMate</div>
             <div className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Versi 1.0.0</div>
@@ -317,7 +317,7 @@ export default function SettingsPage() {
         <button onClick={handleSave}
           className="btn-primary w-full py-3 flex items-center justify-center gap-2">
           <Save size={18} />
-          {saved ? '✅ Tersimpan!' : 'Simpan Pengaturan'}
+          {saved ? 'Tersimpan!' : 'Simpan Pengaturan'}
         </button>
       )}
     </div>

@@ -4,7 +4,7 @@ import { formatDateShort } from '../utils/helpers'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Area, AreaChart
 } from 'recharts'
-import { Scale, Plus, TrendingUp, TrendingDown, Calendar, X } from 'lucide-react'
+import { Scale, Plus, TrendingUp, TrendingDown, Calendar, X, CalendarDays, CalendarRange, BarChart2 } from 'lucide-react'
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -113,13 +113,13 @@ export default function WeightTracker() {
       {/* Stats Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Berat Sekarang', value: `${latestWeight} kg`, color: '#22c55e', icon: '⚖️' },
-          { label: 'Total Naik', value: `${totalGain >= 0 ? '+' : ''}${totalGain.toFixed(1)} kg`, color: totalGain >= 0 ? '#22c55e' : '#ef4444', icon: totalGain >= 0 ? '📈' : '📉' },
-          { label: 'Naik Minggu Ini', value: `${weekGain >= 0 ? '+' : ''}${weekGain.toFixed(2)} kg`, color: weekGain >= 0 ? '#3b82f6' : '#ef4444', icon: '📅' },
-          { label: 'Naik Bulan Ini', value: `${monthGain >= 0 ? '+' : ''}${monthGain.toFixed(2)} kg`, color: monthGain >= 0 ? '#a855f7' : '#ef4444', icon: '🗓️' },
+          { label: 'Berat Sekarang', value: `${latestWeight} kg`, color: '#22c55e', Icon: Scale },
+          { label: 'Total Naik', value: `${totalGain >= 0 ? '+' : ''}${totalGain.toFixed(1)} kg`, color: totalGain >= 0 ? '#22c55e' : '#ef4444', Icon: totalGain >= 0 ? TrendingUp : TrendingDown },
+          { label: 'Naik Minggu Ini', value: `${weekGain >= 0 ? '+' : ''}${weekGain.toFixed(2)} kg`, color: weekGain >= 0 ? '#3b82f6' : '#ef4444', Icon: CalendarDays },
+          { label: 'Naik Bulan Ini', value: `${monthGain >= 0 ? '+' : ''}${monthGain.toFixed(2)} kg`, color: monthGain >= 0 ? '#a855f7' : '#ef4444', Icon: CalendarRange },
         ].map((stat, i) => (
           <div key={i} className="stat-card text-center">
-            <div className="text-2xl mb-1">{stat.icon}</div>
+            <div className="flex justify-center mb-1"><stat.Icon size={20} color={stat.color} /></div>
             <div className="text-xl font-black" style={{ color: stat.color }}>{stat.value}</div>
             <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{stat.label}</div>
           </div>
@@ -167,10 +167,8 @@ export default function WeightTracker() {
           </ResponsiveContainer>
         ) : (
           <div className="empty-state h-52">
-            <div className="empty-state-icon">📊</div>
-            <div className="font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
-              Belum cukup data
-            </div>
+            <div className="empty-state-icon"><BarChart2 size={28} color="var(--text-muted)" /></div>
+            <div className="font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>Belum cukup data</div>
             <div className="text-sm">Catat minimal 2 data berat badan untuk melihat grafik</div>
           </div>
         )}
@@ -207,7 +205,7 @@ export default function WeightTracker() {
           </div>
         ) : (
           <div className="empty-state py-8">
-            <div className="empty-state-icon">⚖️</div>
+            <div className="empty-state-icon"><Scale size={28} color="var(--text-muted)" /></div>
             <div className="font-semibold" style={{ color: 'var(--text-secondary)' }}>Belum ada data berat badan</div>
           </div>
         )}

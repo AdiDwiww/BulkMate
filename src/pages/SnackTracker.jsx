@@ -123,7 +123,7 @@ export default function SnackTracker() {
 
       {/* Popular Snacks */}
       <div>
-        <h2 className="font-bold mb-3" style={{ color: 'var(--text-primary)' }}>🍟 Jajan Populer Indonesia</h2>
+        <h2 className="font-bold mb-3 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}><Coffee size={16} color="#f97316" /> Jajan Populer Indonesia</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {POPULAR_SNACKS.map((snack, i) => (
             <div key={snack.name} className="card p-4 flex items-center justify-between animate-slide-up"

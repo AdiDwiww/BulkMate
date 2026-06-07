@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
-import { Zap, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Zap, Eye, EyeOff, Loader2, CheckCircle, AlertTriangle, Play, Info } from 'lucide-react'
 
 export default function AuthPage({ onDemoLogin }) {
   const [mode, setMode] = useState('login') // 'login' | 'register'
@@ -72,16 +72,16 @@ export default function AuthPage({ onDemoLogin }) {
           </div>
 
           {success && (
-            <div className="mb-4 p-3 rounded-xl text-sm font-medium"
+            <div className="mb-4 p-3 rounded-xl text-sm font-medium flex items-center gap-1.5"
                  style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.2)' }}>
-              ✅ {success}
+              <CheckCircle size={14} /> {success}
             </div>
           )}
 
           {error && (
-            <div className="mb-4 p-3 rounded-xl text-sm font-medium"
+            <div className="mb-4 p-3 rounded-xl text-sm font-medium flex items-center gap-1.5"
                  style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>
-              ⚠️ {error}
+              <AlertTriangle size={14} /> {error}
             </div>
           )}
 
@@ -127,7 +127,7 @@ export default function AuthPage({ onDemoLogin }) {
                   {mode === 'login' ? 'Masuk...' : 'Mendaftar...'}
                 </span>
               ) : (
-                mode === 'login' ? '🚀 Masuk' : '✨ Daftar Sekarang'
+                mode === 'login' ? 'Masuk' : 'Daftar Sekarang'
               )}
             </button>
           </form>
@@ -140,20 +140,20 @@ export default function AuthPage({ onDemoLogin }) {
           </div>
 
           {/* Demo login */}
-          <button onClick={onDemoLogin} className="btn-secondary w-full">
-            🎮 Coba Demo (Tanpa Daftar)
+          <button onClick={onDemoLogin} className="btn-secondary w-full py-2.5">
+            <span className="flex items-center justify-center gap-1.5"><Play size={14} /> Coba Demo (Tanpa Daftar)</span>
           </button>
 
           {!isSupabaseConfigured() && (
-            <p className="text-center text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
-              ⚠️ Mode offline – data disimpan di browser
+            <p className="text-center text-xs mt-3 flex items-center justify-center gap-1" style={{ color: 'var(--text-muted)' }}>
+              <Info size={11} /> Mode offline – data disimpan di browser
             </p>
           )}
         </div>
 
         {/* Footer */}
         <p className="text-center text-xs mt-6" style={{ color: 'var(--text-muted)' }}>
-          BulkMate v1.0 · Made for Indonesian Bulkers 💪
+          BulkMate v1.0 · Made for Indonesian Bulkers
         </p>
       </div>
     </div>

@@ -1,39 +1,38 @@
-import { useApp } from '../context/AppContext'
 import { useState } from 'react'
-import { 
-  LayoutDashboard, Calculator, UtensilsCrossed, Heart, ShoppingBag, 
-  Scale, Bell, Target, Wallet, Wand2, Camera, Image, Brain, 
-  BarChart3, Settings, ChevronLeft, ChevronRight, Zap, X, Menu
+import { useApp } from '../context/AppContext'
+import {
+  LayoutDashboard, Calculator, UtensilsCrossed, Heart, ShoppingBag,
+  Scale, Bell, Target, Wallet, Wand2, Camera, Image, Brain,
+  BarChart3, Settings, ChevronLeft, ChevronRight, Zap, X, Sun, Moon
 } from 'lucide-react'
 
 const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'calculator', label: 'Kalkulator Kalori', icon: Calculator },
-  { id: 'food-tracker', label: 'Food Tracker', icon: UtensilsCrossed },
-  { id: 'favorites', label: 'Makanan Favorit', icon: Heart },
-  { id: 'snack-tracker', label: 'Tracker Jajan', icon: ShoppingBag },
-  { id: 'weight-tracker', label: 'Berat Badan', icon: Scale },
-  { id: 'reminders', label: 'Pengingat Makan', icon: Bell },
-  { id: 'predictor', label: 'Prediksi Target', icon: Target },
-  { id: 'budget', label: 'Budget Tracker', icon: Wallet },
-  { id: 'ai-planner', label: 'AI Meal Planner', icon: Wand2 },
-  { id: 'ai-scanner', label: 'AI Food Scanner', icon: Camera },
-  { id: 'progress-photo', label: 'Progress Photo', icon: Image },
-  { id: 'nutrition-warning', label: 'Nutrition Warning', icon: Brain },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-  { id: 'settings', label: 'Pengaturan', icon: Settings },
+  { id: 'dashboard',        label: 'Dashboard',         icon: LayoutDashboard },
+  { id: 'calculator',       label: 'Kalkulator Kalori', icon: Calculator },
+  { id: 'food-tracker',     label: 'Food Tracker',      icon: UtensilsCrossed },
+  { id: 'favorites',        label: 'Makanan Favorit',   icon: Heart },
+  { id: 'snack-tracker',    label: 'Tracker Jajan',     icon: ShoppingBag },
+  { id: 'weight-tracker',   label: 'Berat Badan',       icon: Scale },
+  { id: 'reminders',        label: 'Pengingat Makan',   icon: Bell },
+  { id: 'predictor',        label: 'Prediksi Target',   icon: Target },
+  { id: 'budget',           label: 'Budget Tracker',    icon: Wallet },
+  { id: 'ai-planner',       label: 'AI Meal Planner',   icon: Wand2 },
+  { id: 'ai-scanner',       label: 'AI Food Scanner',   icon: Camera },
+  { id: 'progress-photo',   label: 'Progress Photo',    icon: Image },
+  { id: 'nutrition-warning',label: 'Nutrition Warning', icon: Brain },
+  { id: 'analytics',        label: 'Analytics',         icon: BarChart3 },
+  { id: 'settings',         label: 'Pengaturan',        icon: Settings },
 ]
 
-export default function Sidebar({ activePage, onPageChange }) {
+export default function Sidebar({ activePage, onPageChange, mobileOpen, setMobileOpen }) {
   const { state, dispatch } = useApp()
   const [collapsed, setCollapsed] = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
 
   const toggleTheme = () => {
     dispatch({ type: 'SET_THEME', payload: state.theme === 'dark' ? 'light' : 'dark' })
   }
 
-  const SidebarContent = () => (
+  const SidebarContent = ({ onNavClick }) => (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
@@ -56,7 +55,7 @@ export default function Sidebar({ activePage, onPageChange }) {
         <div className="px-4 py-3 mx-3 mt-3 rounded-xl" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.15)' }}>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg gradient-green flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-              {state.profile?.name?.charAt(0) || 'A'}
+              {state.profile?.name?.charAt(0) || 'B'}
             </div>
             <div className="min-w-0">
               <div className="font-semibold text-sm truncate" style={{ color: 'var(--text-primary)' }}>
@@ -78,10 +77,7 @@ export default function Sidebar({ activePage, onPageChange }) {
           return (
             <button
               key={item.id}
-              onClick={() => {
-                onPageChange(item.id)
-                setMobileOpen(false)
-              }}
+              onClick={() => onNavClick(item.id)}
               className={`sidebar-link w-full text-left ${isActive ? 'active' : ''}`}
               title={collapsed ? item.label : ''}
             >
@@ -94,22 +90,25 @@ export default function Sidebar({ activePage, onPageChange }) {
 
       {/* Bottom controls */}
       <div className="p-3 border-t space-y-2" style={{ borderColor: 'var(--border-color)' }}>
-        {/* Theme toggle */}
         <button
           onClick={toggleTheme}
           className="sidebar-link w-full"
           title={collapsed ? (state.theme === 'dark' ? 'Light Mode' : 'Dark Mode') : ''}
         >
-          <span className="text-base flex-shrink-0">{state.theme === 'dark' ? '☀️' : '🌙'}</span>
+          {state.theme === 'dark'
+            ? <Sun size={18} className="flex-shrink-0" />
+            : <Moon size={18} className="flex-shrink-0" />}
           {!collapsed && <span className="text-sm">{state.theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
         </button>
-        
+
         {/* Collapse button - desktop only */}
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="sidebar-link w-full hidden md:flex"
         >
-          {collapsed ? <ChevronRight size={18} className="flex-shrink-0" /> : <ChevronLeft size={18} className="flex-shrink-0" />}
+          {collapsed
+            ? <ChevronRight size={18} className="flex-shrink-0" />
+            : <ChevronLeft size={18} className="flex-shrink-0" />}
           {!collapsed && <span className="text-sm">Tutup Sidebar</span>}
         </button>
       </div>
@@ -118,16 +117,7 @@ export default function Sidebar({ activePage, onPageChange }) {
 
   return (
     <>
-      {/* Mobile hamburger */}
-      <button
-        onClick={() => setMobileOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-50 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
-      >
-        <Menu size={20} style={{ color: 'var(--text-primary)' }} />
-      </button>
-
-      {/* Mobile overlay */}
+      {/* Mobile overlay backdrop */}
       {mobileOpen && (
         <div
           className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
@@ -135,7 +125,7 @@ export default function Sidebar({ activePage, onPageChange }) {
         />
       )}
 
-      {/* Mobile sidebar */}
+      {/* Mobile slide-in sidebar */}
       <aside
         className={`md:hidden fixed top-0 left-0 h-full z-50 w-72 transition-transform duration-300 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
         style={{ background: 'var(--sidebar-bg)', borderRight: '1px solid var(--border-color)' }}
@@ -147,7 +137,7 @@ export default function Sidebar({ activePage, onPageChange }) {
         >
           <X size={16} style={{ color: 'var(--text-secondary)' }} />
         </button>
-        <SidebarContent />
+        <SidebarContent onNavClick={onPageChange} />
       </aside>
 
       {/* Desktop sidebar */}
@@ -155,7 +145,7 @@ export default function Sidebar({ activePage, onPageChange }) {
         className={`hidden md:flex flex-col h-screen sticky top-0 transition-all duration-300 flex-shrink-0 ${collapsed ? 'w-16' : 'w-64'}`}
         style={{ background: 'var(--sidebar-bg)', borderRight: '1px solid var(--border-color)' }}
       >
-        <SidebarContent />
+        <SidebarContent onNavClick={onPageChange} />
       </aside>
     </>
   )

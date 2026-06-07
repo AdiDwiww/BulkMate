@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { DEFAULT_FAVORITES, FOOD_DATABASE, MEAL_TYPES } from '../utils/helpers'
-import { Heart, Plus, Trash2, Star, Zap, Search, X } from 'lucide-react'
+import { Heart, Plus, Trash2, Star, Zap, Search, X, Sunrise, Sun, Cookie } from 'lucide-react'
 
 function AddFavoriteModal({ onClose, onAdd }) {
   const [searchQuery, setSearchQuery] = useState('')
@@ -44,10 +44,10 @@ function AddFavoriteModal({ onClose, onAdd }) {
         <div className="p-5 space-y-4">
           <div className="tab-nav">
             <button className={`tab-btn ${mode === 'default' ? 'active' : ''}`} onClick={() => setMode('default')}>
-              ⭐ Rekomendasi
+              <Star size={13} style={{ display: 'inline', marginRight: 4 }} />Rekomendasi
             </button>
             <button className={`tab-btn ${mode === 'search' ? 'active' : ''}`} onClick={() => setMode('search')}>
-              🔍 Cari Database
+              <Search size={13} style={{ display: 'inline', marginRight: 4 }} />Cari Database
             </button>
           </div>
 
@@ -217,9 +217,9 @@ export default function FavoriteFoods() {
             {/* Quick add buttons */}
             <div className="flex gap-2">
               {[
-                { type: 'breakfast', label: 'Sarapan', emoji: '🌅' },
-                { type: 'lunch', label: 'Siang', emoji: '☀️' },
-                { type: 'snack', label: 'Snack', emoji: '🍪' },
+                { type: 'breakfast', label: 'Sarapan', Icon: Sunrise },
+                { type: 'lunch', label: 'Siang', Icon: Sun },
+                { type: 'snack', label: 'Snack', Icon: Cookie },
               ].map(meal => (
                 <button
                   key={meal.type}
@@ -230,7 +230,7 @@ export default function FavoriteFoods() {
                     color: addedId === (food.id || food.name) ? '#22c55e' : 'var(--text-secondary)',
                     border: '1px solid var(--border-color)',
                   }}>
-                  <span>{meal.emoji}</span>
+                  <meal.Icon size={12} />
                   <span className="hidden sm:inline">{meal.label}</span>
                 </button>
               ))}

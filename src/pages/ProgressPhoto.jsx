@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useApp } from '../context/AppContext'
-import { Image, Upload, Trash2, X, ChevronLeft, ChevronRight, Calendar } from 'lucide-react'
+import { Image, Upload, Trash2, X, ChevronLeft, ChevronRight, Calendar, RefreshCw } from 'lucide-react'
 import { formatDateShort } from '../utils/helpers'
 
 export default function ProgressPhoto() {
@@ -52,7 +52,7 @@ export default function ProgressPhoto() {
             <button onClick={() => setCompareMode(!compareMode)}
               className={`px-3 py-2 rounded-xl text-sm font-semibold border transition-all ${compareMode ? 'border-blue-500 text-blue-500' : 'border-[var(--border-color)] text-[var(--text-secondary)]'}`}
               style={{ background: compareMode ? 'rgba(59,130,246,0.08)' : 'var(--bg-secondary)' }}>
-              🔄 Compare
+              <span className="flex items-center gap-1.5"><RefreshCw size={14} /> Compare</span>
             </button>
           )}
           <button onClick={() => setShowUploadForm(true)} className="btn-primary px-3 py-2">

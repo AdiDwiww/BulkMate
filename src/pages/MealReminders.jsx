@@ -1,14 +1,18 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { Bell, Plus, Trash2, X, Clock, Check } from 'lucide-react'
+import { Bell, Plus, Trash2, X, Clock, Check, Sunrise, Sun, Moon, Cookie, Milk, Apple, UtensilsCrossed, Banana, AlertTriangle } from 'lucide-react'
+
+const REMINDER_ICONS = {
+  Sunrise, Sun, Moon, Cookie, Milk, Apple, Bell, Banana, UtensilsCrossed
+}
 
 const MEAL_REMINDERS_DEFAULT = [
-  { label: 'Sarapan', time: '07:00', emoji: '🌅', enabled: true },
-  { label: 'Snack Pagi', time: '10:00', emoji: '🍌', enabled: true },
-  { label: 'Makan Siang', time: '12:30', emoji: '☀️', enabled: true },
-  { label: 'Snack Sore', time: '15:30', emoji: '🍪', enabled: false },
-  { label: 'Makan Malam', time: '19:00', emoji: '🌙', enabled: true },
-  { label: 'Sebelum Tidur', time: '21:30', emoji: '🥛', enabled: false },
+  { label: 'Sarapan', time: '07:00', iconName: 'Sunrise', enabled: true },
+  { label: 'Snack Pagi', time: '10:00', iconName: 'Banana', enabled: true },
+  { label: 'Makan Siang', time: '12:30', iconName: 'Sun', enabled: true },
+  { label: 'Snack Sore', time: '15:30', iconName: 'Cookie', enabled: false },
+  { label: 'Makan Malam', time: '19:00', iconName: 'Moon', enabled: true },
+  { label: 'Sebelum Tidur', time: '21:30', iconName: 'Milk', enabled: false },
 ]
 
 export default function MealReminders() {
@@ -19,7 +23,7 @@ export default function MealReminders() {
   const allReminders = reminders.length > 0 ? reminders : MEAL_REMINDERS_DEFAULT.map((r, i) => ({ ...r, id: `default-${i}` }))
 
   const [showModal, setShowModal] = useState(false)
-  const [form, setForm] = useState({ label: '', time: '08:00', emoji: '🍽️', enabled: true })
+  const [form, setForm] = useState({ label: '', time: '08:00', iconName: 'UtensilsCrossed', enabled: true })
   const [notifPermission, setNotifPermission] = useState(
     typeof Notification !== 'undefined' ? Notification.permission : 'default'
   )
@@ -32,7 +36,7 @@ export default function MealReminders() {
   const handleAdd = () => {
     if (!form.label) return
     dispatch({ type: 'ADD_REMINDER', payload: form })
-    setForm({ label: '', time: '08:00', emoji: '🍽️', enabled: true })
+    setForm({ label: '', time: '08:00', iconName: 'UtensilsCrossed', enabled: true })
     setShowModal(false)
   }
 
@@ -55,7 +59,7 @@ export default function MealReminders() {
 
   const testNotif = (reminder) => {
     if (notifPermission === 'granted') {
-      new Notification(`${reminder.emoji} ${reminder.label}`, {
+      new Notification(`BulkMate: ${reminder.label}`, {
         body: 'Waktunya makan! Jangan sampai melewatkan makan.',
         icon: '/icon-192.png',
       })
@@ -82,7 +86,7 @@ export default function MealReminders() {
         <div className="rounded-2xl p-4 flex items-center justify-between"
              style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}>
           <div className="flex items-center gap-3">
-            <span className="text-2xl">🔔</span>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(59,130,246,0.12)' }}><Bell size={18} color="#3b82f6" /></div>
             <div>
               <div className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Aktifkan Notifikasi</div>
               <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Dapatkan pengingat makan tepat waktu</div>
@@ -96,8 +100,8 @@ export default function MealReminders() {
 
       {notifPermission === 'denied' && (
         <div className="rounded-2xl p-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-          <div className="text-sm" style={{ color: '#ef4444' }}>
-            ⚠️ Notifikasi diblokir. Aktifkan melalui pengaturan browser.
+          <div className="text-sm flex items-center gap-1.5" style={{ color: '#ef4444' }}>
+            <AlertTriangle size={14} /> Notifikasi diblokir. Aktifkan melalui pengaturan browser.
           </div>
         </div>
       )}
@@ -131,9 +135,9 @@ export default function MealReminders() {
           .map((reminder, i) => (
           <div key={reminder.id} className="card p-4 flex items-center gap-4 animate-slide-up"
                style={{ animationDelay: `${i * 50}ms` }}>
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
                  style={{ background: reminder.enabled ? 'rgba(34,197,94,0.1)' : 'var(--bg-secondary)' }}>
-              {reminder.emoji}
+              {(() => { const IC = REMINDER_ICONS[reminder.iconName] || REMINDER_ICONS[reminder.emoji] || Bell; return <IC size={20} color={reminder.enabled ? '#22c55e' : 'var(--text-muted)'} /> })()}
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-semibold" style={{ color: reminder.enabled ? 'var(--text-primary)' : 'var(--text-muted)' }}>
@@ -197,16 +201,16 @@ export default function MealReminders() {
                   onChange={e => setForm(f => ({ ...f, time: e.target.value }))} />
               </div>
               <div>
-                <label className="label">Emoji</label>
+                <label className="label">Icon</label>
                 <div className="flex flex-wrap gap-2">
-                  {['🌅', '☀️', '🌙', '🍪', '🥛', '🍎', '🍽️', '🥗', '🍚', '🍳'].map(e => (
-                    <button key={e} onClick={() => setForm(f => ({ ...f, emoji: e }))}
-                      className="text-2xl w-10 h-10 rounded-xl transition-all flex items-center justify-center"
+                  {Object.entries(REMINDER_ICONS).map(([name, IC]) => (
+                    <button key={name} onClick={() => setForm(f => ({ ...f, iconName: name }))}
+                      className="w-10 h-10 rounded-xl transition-all flex items-center justify-center"
                       style={{
-                        background: form.emoji === e ? 'rgba(34,197,94,0.15)' : 'var(--bg-secondary)',
-                        border: `1px solid ${form.emoji === e ? '#22c55e' : 'var(--border-color)'}`,
+                        background: form.iconName === name ? 'rgba(34,197,94,0.15)' : 'var(--bg-secondary)',
+                        border: `1px solid ${form.iconName === name ? '#22c55e' : 'var(--border-color)'}`,
                       }}>
-                      {e}
+                      <IC size={18} color={form.iconName === name ? '#22c55e' : 'var(--text-muted)'} />
                     </button>
                   ))}
                 </div>
