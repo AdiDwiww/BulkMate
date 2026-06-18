@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext'
 import { Camera, Upload, Loader2, Plus, Edit3, CheckCircle, X, Zap, Sunrise, Sun, Moon, Cookie, AlertTriangle, RefreshCw } from 'lucide-react'
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY
 
 // Konversi file ke base64
 async function fileToBase64(file) {
@@ -17,12 +18,7 @@ async function fileToBase64(file) {
   })
 }
 
-// Scan makanan menggunakan Gemini Vision API
-async function scanFoodWithGemini(file) {
-  const base64 = await fileToBase64(file)
-  const mimeType = file.type || 'image/jpeg'
-
-  const prompt = `Kamu adalah ahli nutrisi. Analisis foto makanan ini dan identifikasi setiap makanan yang terlihat.
+const FOOD_SCAN_PROMPT = `Kamu adalah ahli nutrisi. Analisis foto makanan ini dan identifikasi setiap makanan yang terlihat.
 
 Berikan respons HANYA dalam format JSON berikut (tanpa teks lain):
 {
@@ -42,6 +38,56 @@ Berikan respons HANYA dalam format JSON berikut (tanpa teks lain):
 
 Gunakan pengetahuan tentang makanan Indonesia. Estimasi porsi secara realistis berdasarkan foto.`
 
+// Scan dengan Groq (LLaMA Vision) — GRATIS 14.400 req/hari
+async function scanFoodWithGroq(file) {
+  const base64 = await fileToBase64(file)
+  const mimeType = file.type || 'image/jpeg'
+
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image_url',
+              image_url: { url: `data:${mimeType};base64,${base64}` },
+            },
+            { type: 'text', text: FOOD_SCAN_PROMPT },
+          ],
+        },
+      ],
+      temperature: 0.2,
+      max_tokens: 1024,
+    }),
+  })
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}))
+    const status = response.status
+    if (status === 429) throw new Error('QUOTA_EXCEEDED')
+    if (status === 401) throw new Error('INVALID_KEY')
+    throw new Error(errData.error?.message || 'Groq API error')
+  }
+
+  const data = await response.json()
+  const text = data.choices?.[0]?.message?.content || ''
+  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) throw new Error('Format respons AI tidak valid')
+  return JSON.parse(jsonMatch[0])
+}
+
+// Scan dengan Gemini Vision — fallback
+async function scanFoodWithGemini(file) {
+  const base64 = await fileToBase64(file)
+  const mimeType = file.type || 'image/jpeg'
+
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
     {
@@ -51,13 +97,10 @@ Gunakan pengetahuan tentang makanan Indonesia. Estimasi porsi secara realistis b
         contents: [{
           parts: [
             { inlineData: { mimeType, data: base64 } },
-            { text: prompt }
+            { text: FOOD_SCAN_PROMPT }
           ]
         }],
-        generationConfig: {
-          temperature: 0.2,
-          maxOutputTokens: 1024,
-        }
+        generationConfig: { temperature: 0.2, maxOutputTokens: 1024 }
       })
     }
   )
@@ -72,12 +115,28 @@ Gunakan pengetahuan tentang makanan Indonesia. Estimasi porsi secara realistis b
 
   const data = await response.json()
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
-
-  // Parse JSON dari response
   const jsonMatch = text.match(/\{[\s\S]*\}/)
   if (!jsonMatch) throw new Error('Format respons AI tidak valid')
-
   return JSON.parse(jsonMatch[0])
+}
+
+// Router utama: coba Groq dulu, fallback ke Gemini
+async function scanFoodWithAI(file) {
+  if (GROQ_API_KEY) {
+    try {
+      const result = await scanFoodWithGroq(file)
+      return { ...result, _provider: 'Groq' }
+    } catch (e) {
+      if (e.message === 'QUOTA_EXCEEDED' || e.message === 'INVALID_KEY') throw e
+      // Network error → coba Gemini
+      console.warn('Groq failed, trying Gemini fallback:', e.message)
+    }
+  }
+  if (GEMINI_API_KEY) {
+    const result = await scanFoodWithGemini(file)
+    return { ...result, _provider: 'Gemini' }
+  }
+  throw new Error('NO_KEY')
 }
 
 // Fallback simulasi jika tidak ada API key
@@ -127,7 +186,8 @@ export default function AIFoodScanner() {
   const [addedSuccess, setAddedSuccess] = useState(false)
   const fileInputRef = useRef(null)
 
-  const hasApiKey = Boolean(GEMINI_API_KEY)
+  const hasApiKey = Boolean(GROQ_API_KEY || GEMINI_API_KEY)
+  const activeProvider = GROQ_API_KEY ? 'Groq' : GEMINI_API_KEY ? 'Gemini' : null
 
   const handleFileChange = (e) => {
     const file = e.target.files[0]
@@ -158,7 +218,7 @@ export default function AIFoodScanner() {
     try {
       let scanResult
       if (hasApiKey) {
-        scanResult = await scanFoodWithGemini(image)
+        scanResult = await scanFoodWithAI(image)
       } else {
         await new Promise(r => setTimeout(r, 2000))
         scanResult = simulateFoodScan()
@@ -167,9 +227,8 @@ export default function AIFoodScanner() {
     } catch (err) {
       console.error('Scan error:', err)
       const msg = err.message
-      // Fallback ke simulasi untuk semua error - tampilkan notifikasi ringkas
       if (msg === 'QUOTA_EXCEEDED') {
-        setError('Kuota Gemini API habis. Menampilkan hasil simulasi.')
+        setError('Kuota AI habis. Menampilkan hasil simulasi.')
       } else if (msg === 'INVALID_KEY') {
         setError('API key tidak valid. Menampilkan hasil simulasi.')
       } else {
@@ -240,12 +299,16 @@ export default function AIFoodScanner() {
         </div>
         <div>
           <div className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-            {hasApiKey ? 'Gemini Vision AI Aktif' : 'Mode Demo (Simulasi)'}
+            {hasApiKey
+              ? `${activeProvider} Vision AI Aktif`
+              : 'Mode Demo (Simulasi)'}
           </div>
           <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            {hasApiKey
-              ? 'Menggunakan Google Gemini 2.0 Flash untuk identifikasi makanan secara real-time.'
-              : 'Gemini API key belum dikonfigurasi. Hasil scan menggunakan data simulasi.'}
+            {activeProvider === 'Groq'
+              ? 'Menggunakan Groq LLaMA 4 Scout Vision — gratis 14.400 scan/hari.'
+              : activeProvider === 'Gemini'
+              ? 'Menggunakan Google Gemini 2.5 Flash untuk identifikasi makanan.'
+              : 'Tambahkan VITE_GROQ_API_KEY di .env untuk scan gratis tanpa limit.'}
           </div>
         </div>
       </div>

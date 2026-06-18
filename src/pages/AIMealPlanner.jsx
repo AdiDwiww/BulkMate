@@ -3,10 +3,10 @@ import { useApp } from '../context/AppContext'
 import { Wand2, Loader2, Plus, RefreshCw, Zap, Sunrise, Sun, Moon, Cookie, BarChart2, AlertTriangle } from 'lucide-react'
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY
+const GROQ_API_KEY   = import.meta.env.VITE_GROQ_API_KEY
 
-// Generate meal plan menggunakan Gemini AI
-async function generateWithGemini(budget, calorieTarget, proteinTarget) {
-  const prompt = `Kamu adalah ahli gizi Indonesia. Buat rencana makan harian untuk program bulking (menaikkan berat badan) dengan ketentuan:
+const MEAL_PLAN_PROMPT = (budget, calorieTarget, proteinTarget) =>
+  `Kamu adalah ahli gizi Indonesia. Buat rencana makan harian untuk program bulking (menaikkan berat badan) dengan ketentuan:
 - Budget harian: Rp ${budget.toLocaleString('id-ID')}
 - Target kalori: ${calorieTarget} kcal
 - Target protein: ${proteinTarget}g
@@ -24,23 +24,60 @@ Berikan respons HANYA dalam format JSON ini (tanpa teks lain):
     "fat": <total lemak gram>,
     "cost": <perkiraan harga dalam rupiah>
   },
-  "lunch": { ... },
-  "dinner": { ... },
-  "snack": { ... }
+  "lunch": { "name": "", "items": [], "calories": 0, "protein": 0, "carbs": 0, "fat": 0, "cost": 0 },
+  "dinner": { "name": "", "items": [], "calories": 0, "protein": 0, "carbs": 0, "fat": 0, "cost": 0 },
+  "snack": { "name": "", "items": [], "calories": 0, "protein": 0, "carbs": 0, "fat": 0, "cost": 0 }
 }`
 
+function parseMealPlan(text) {
+  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) throw new Error('Format respons tidak valid')
+  const plan = JSON.parse(jsonMatch[0])
+  const totalCals = (plan.breakfast?.calories || 0) + (plan.lunch?.calories || 0) + (plan.dinner?.calories || 0) + (plan.snack?.calories || 0)
+  const totalProtein = (plan.breakfast?.protein || 0) + (plan.lunch?.protein || 0) + (plan.dinner?.protein || 0) + (plan.snack?.protein || 0)
+  const totalCost = (plan.breakfast?.cost || 0) + (plan.lunch?.cost || 0) + (plan.dinner?.cost || 0) + (plan.snack?.cost || 0)
+  return { ...plan, totalCals, totalProtein, totalCost }
+}
+
+// Generate dengan Groq (llama-3.3-70b) — cepat & gratis
+async function generateWithGroq(budget, calorieTarget, proteinTarget) {
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: MEAL_PLAN_PROMPT(budget, calorieTarget, proteinTarget) }],
+      temperature: 0.7,
+      max_tokens: 1024,
+    }),
+  })
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}))
+    const status = response.status
+    if (status === 429) throw new Error('QUOTA_EXCEEDED')
+    if (status === 401) throw new Error('INVALID_KEY')
+    throw new Error(errData.error?.message || 'Groq API error')
+  }
+  const data = await response.json()
+  return parseMealPlan(data.choices?.[0]?.message?.content || '')
+}
+
+// Generate dengan Gemini — fallback
+async function generateWithGemini(budget, calorieTarget, proteinTarget) {
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
+        contents: [{ parts: [{ text: MEAL_PLAN_PROMPT(budget, calorieTarget, proteinTarget) }] }],
         generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
       })
     }
   )
-
   if (!response.ok) {
     const errData = await response.json().catch(() => ({}))
     const status = response.status
@@ -48,18 +85,24 @@ Berikan respons HANYA dalam format JSON ini (tanpa teks lain):
     if (status === 400) throw new Error('INVALID_KEY')
     throw new Error(errData.error?.message || 'Gemini API error')
   }
-
   const data = await response.json()
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) throw new Error('Format respons tidak valid')
+  return parseMealPlan(data.candidates?.[0]?.content?.parts?.[0]?.text || '')
+}
 
-  const plan = JSON.parse(jsonMatch[0])
-  const totalCals = (plan.breakfast?.calories || 0) + (plan.lunch?.calories || 0) + (plan.dinner?.calories || 0) + (plan.snack?.calories || 0)
-  const totalProtein = (plan.breakfast?.protein || 0) + (plan.lunch?.protein || 0) + (plan.dinner?.protein || 0) + (plan.snack?.protein || 0)
-  const totalCost = (plan.breakfast?.cost || 0) + (plan.lunch?.cost || 0) + (plan.dinner?.cost || 0) + (plan.snack?.cost || 0)
-
-  return { ...plan, totalCals, totalProtein, totalCost }
+// Router utama: Groq dulu, fallback Gemini
+async function generateMealPlanWithAI(budget, calorieTarget, proteinTarget) {
+  if (GROQ_API_KEY) {
+    try {
+      return await generateWithGroq(budget, calorieTarget, proteinTarget)
+    } catch (e) {
+      if (e.message === 'QUOTA_EXCEEDED' || e.message === 'INVALID_KEY') throw e
+      console.warn('Groq failed, trying Gemini:', e.message)
+    }
+  }
+  if (GEMINI_API_KEY) {
+    return await generateWithGemini(budget, calorieTarget, proteinTarget)
+  }
+  throw new Error('NO_KEY')
 }
 
 // Fallback lokal jika tidak ada Gemini key
@@ -109,7 +152,8 @@ export default function AIMealPlanner() {
   const [usedAI, setUsedAI] = useState(false)
   const [addedSuccess, setAddedSuccess] = useState(false)
 
-  const hasApiKey = Boolean(GEMINI_API_KEY)
+  const hasApiKey = Boolean(GROQ_API_KEY || GEMINI_API_KEY)
+  const activeProvider = GROQ_API_KEY ? 'Groq' : GEMINI_API_KEY ? 'Gemini' : null
 
   const handleGenerate = async () => {
     setLoading(true)
@@ -118,7 +162,7 @@ export default function AIMealPlanner() {
 
     try {
       if (hasApiKey) {
-        const result = await generateWithGemini(budget, calorieTarget, proteinTarget)
+        const result = await generateMealPlanWithAI(budget, calorieTarget, proteinTarget)
         setPlan(result)
         setUsedAI(true)
       } else {
@@ -130,11 +174,11 @@ export default function AIMealPlanner() {
       console.error(err)
       const msg = err.message
       if (msg === 'QUOTA_EXCEEDED') {
-        setAiError('Kuota Gemini API habis (free tier). Menu dibuat dari template lokal.')
+        setAiError('Kuota AI habis. Menu dibuat dari template lokal.')
       } else if (msg === 'INVALID_KEY') {
-        setAiError('API key tidak valid. Periksa VITE_GEMINI_API_KEY di file .env.')
+        setAiError('API key tidak valid. Periksa VITE_GROQ_API_KEY atau VITE_GEMINI_API_KEY di .env.')
       } else {
-        setAiError(`Gemini API error: ${msg}. Menggunakan template lokal.`)
+        setAiError(`AI error: ${msg}. Menggunakan template lokal.`)
       }
       setPlan(generateLocalMealPlan(budget, calorieTarget, proteinTarget))
       setUsedAI(false)
@@ -196,12 +240,14 @@ export default function AIMealPlanner() {
         </div>
         <div>
           <div className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-            {hasApiKey ? 'Gemini AI Aktif' : 'Mode Lokal (Template)'}
+            {hasApiKey ? `${activeProvider} AI Aktif` : 'Mode Lokal (Template)'}
           </div>
           <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            {hasApiKey
+            {activeProvider === 'Groq'
+              ? 'Menggunakan Groq LLaMA 3.3 70B untuk generate menu personal dengan bahan Indonesia.'
+              : activeProvider === 'Gemini'
               ? 'Menggunakan Google Gemini untuk generate menu personal dengan bahan Indonesia.'
-              : 'Menggunakan database menu lokal. Hubungkan Gemini API untuk menu yang lebih variatif.'}
+              : 'Tambahkan VITE_GROQ_API_KEY di .env untuk menu AI gratis tanpa limit.'}
           </div>
         </div>
       </div>
