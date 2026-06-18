@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useApp } from '../context/AppContext'
-import { Camera, Upload, Loader2, Plus, Edit3, CheckCircle, X, Zap, Sunrise, Sun, Moon, Cookie, AlertTriangle, RefreshCw } from 'lucide-react'
+import { Camera, Upload, Loader2, Plus, Edit3, CheckCircle, X, Zap, Sunrise, Sun, Moon, Cookie, AlertTriangle, RefreshCw, ScanLine } from 'lucide-react'
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY
@@ -185,6 +185,7 @@ export default function AIFoodScanner() {
   const [mealType, setMealType] = useState('lunch')
   const [addedSuccess, setAddedSuccess] = useState(false)
   const fileInputRef = useRef(null)
+  const cameraInputRef = useRef(null)
 
   const hasApiKey = Boolean(GROQ_API_KEY || GEMINI_API_KEY)
   const activeProvider = GROQ_API_KEY ? 'Groq' : GEMINI_API_KEY ? 'Gemini' : null
@@ -316,10 +317,9 @@ export default function AIFoodScanner() {
       {/* Upload Area */}
       <div
         className="card border-2 border-dashed"
-        style={{ borderColor: imageUrl ? '#22c55e' : 'var(--border-color)', cursor: 'pointer' }}
+        style={{ borderColor: imageUrl ? '#22c55e' : 'var(--border-color)' }}
         onDrop={handleDrop}
         onDragOver={e => e.preventDefault()}
-        onClick={() => !imageUrl && fileInputRef.current?.click()}
       >
         {imageUrl ? (
           <div className="relative">
@@ -335,30 +335,51 @@ export default function AIFoodScanner() {
             </div>
           </div>
         ) : (
-          <div className="empty-state py-12">
+          <div className="empty-state py-8">
             <div className="w-16 h-16 rounded-2xl gradient-purple flex items-center justify-center mb-4 mx-auto"
                  style={{ boxShadow: '0 8px 24px rgba(168,85,247,0.35)' }}>
               <Camera size={30} color="white" />
             </div>
-            <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>Upload Foto Makanan</div>
-            <div className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-              Drag & drop atau klik untuk pilih foto
+            <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>Upload atau Foto Makanan</div>
+            <div className="text-sm mt-1 mb-4" style={{ color: 'var(--text-muted)' }}>
+              Drag & drop, pilih file, atau foto langsung
             </div>
-            <div className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>JPG, PNG, WEBP</div>
-            <button className="btn-blue mt-4 flex items-center gap-2 mx-auto">
-              <Upload size={16} />
-              Pilih Foto
-            </button>
+
+            {/* Two action buttons */}
+            <div className="flex gap-3 justify-center">
+              {/* Camera capture — buka kamera langsung di HP */}
+              <button
+                onClick={() => cameraInputRef.current?.click()}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-white"
+                style={{ background: 'linear-gradient(135deg, #a855f7, #7c3aed)', boxShadow: '0 4px 16px rgba(168,85,247,0.4)' }}
+              >
+                <Camera size={16} />
+                Ambil Foto
+              </button>
+
+              {/* File picker — pilih dari galeri */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="btn-secondary flex items-center gap-2"
+              >
+                <Upload size={16} />
+                Pilih File
+              </button>
+            </div>
           </div>
         )}
+
+        {/* Input untuk pilih dari galeri */}
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+        {/* Input untuk buka kamera langsung (capture=environment = kamera belakang) */}
+        <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
       </div>
 
       {/* Scan Button */}
       {imageUrl && !result && !loading && (
         <button onClick={handleScan} className="btn-primary w-full py-3 flex items-center justify-center gap-2">
-          <Camera size={18} />
-          {hasApiKey ? 'Scan dengan Gemini Vision AI' : 'Scan Makanan (Demo)'}
+          <ScanLine size={18} />
+          {hasApiKey ? `Scan dengan ${activeProvider} AI` : 'Scan Makanan (Demo)'}
         </button>
       )}
 
@@ -370,7 +391,7 @@ export default function AIFoodScanner() {
             <Loader2 size={28} color="white" className="animate-spin" />
           </div>
           <div className="font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-            {hasApiKey ? 'Gemini AI Menganalisis...' : 'Memproses foto...'}
+            {hasApiKey ? `${activeProvider} AI Menganalisis...` : 'Memproses foto...'}
           </div>
           <div className="text-sm" style={{ color: 'var(--text-muted)' }}>
             Mengidentifikasi makanan dan menghitung nutrisi
@@ -400,7 +421,7 @@ export default function AIFoodScanner() {
             <div>
               <div className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
                 {result.confidence >= 85 ? 'Teridentifikasi dengan baik' : 'Kepercayaan sedang'}
-                {hasApiKey && <span className="badge badge-green ml-2 text-xs">Gemini AI</span>}
+                {hasApiKey && <span className="badge badge-green ml-2 text-xs">{result._provider || activeProvider} AI</span>}
               </div>
               <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{result.description}</div>
             </div>
