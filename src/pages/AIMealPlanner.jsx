@@ -107,6 +107,7 @@ export default function AIMealPlanner() {
   const [plan, setPlan] = useState(null)
   const [aiError, setAiError] = useState(null)
   const [usedAI, setUsedAI] = useState(false)
+  const [addedSuccess, setAddedSuccess] = useState(false)
 
   const hasApiKey = Boolean(GEMINI_API_KEY)
 
@@ -166,7 +167,8 @@ export default function AIMealPlanner() {
         }
       })
     })
-    alert('Menu berhasil ditambahkan ke log hari ini!')
+    setAddedSuccess(true)
+    setTimeout(() => setAddedSuccess(false), 3000)
   }
 
   const mealIcons = {
@@ -178,7 +180,7 @@ export default function AIMealPlanner() {
 
   return (
     <div className="animate-fade-in space-y-5">
-      <div>
+      <div className="mobile-page-header">
         <h1 className="section-title text-xl">AI Meal Planner</h1>
         <p className="section-subtitle">Generate menu harian otomatis sesuai target bulkingmu</p>
       </div>
@@ -338,10 +340,17 @@ export default function AIMealPlanner() {
               <RefreshCw size={16} />
               Generate Ulang
             </button>
-            <button onClick={handleAddToLog} className="btn-primary flex-1 flex items-center justify-center gap-2">
-              <Plus size={16} />
-              Tambah ke Log
-            </button>
+            {addedSuccess ? (
+              <div className="flex-1 rounded-xl flex items-center justify-center gap-2 font-semibold text-sm text-green-500"
+                   style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)' }}>
+                ✓ Berhasil ditambahkan!
+              </div>
+            ) : (
+              <button onClick={handleAddToLog} className="btn-primary flex-1 flex items-center justify-center gap-2">
+                <Plus size={16} />
+                Tambah ke Log
+              </button>
+            )}
           </div>
         </div>
       )}

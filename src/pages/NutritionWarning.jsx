@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useApp } from '../context/AppContext'
 import { calculateTotals, BULKING_FOODS } from '../utils/helpers'
-import { Brain, AlertTriangle, CheckCircle, TrendingUp, TrendingDown, Zap, Info, Flame, Dumbbell, Scale, CalendarDays, Sparkles, BarChart2, Beef, Milk, Clock, AlertCircle } from 'lucide-react'
+import { Brain, AlertTriangle, CheckCircle, TrendingUp, TrendingDown, Zap, Info, Flame, Dumbbell, Scale, CalendarDays, Sparkles, BarChart2, Beef, Milk, Clock, AlertCircle, Target } from 'lucide-react'
 
 export default function NutritionWarning() {
   const { state } = useApp()
@@ -170,7 +170,7 @@ export default function NutritionWarning() {
 
   return (
     <div className="animate-fade-in space-y-5">
-      <div>
+      <div className="mobile-page-header">
         <h1 className="section-title text-xl">Smart Nutrition Warning</h1>
         <p className="section-subtitle">AI menganalisis pola makan dan memberikan peringatan</p>
       </div>

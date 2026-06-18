@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { calculateBMR, calculateTDEE, calculateProteinTarget, ACTIVITY_LEVELS, categorizeBMI } from '../utils/helpers'
-import { Settings, Save, User, Target, Sun, Moon, Trash2, Download, LogOut, Zap } from 'lucide-react'
+import { Settings, Save, User, Target, Sun, Moon, Trash2, Download, LogOut, Zap, AlertTriangle, X, RefreshCw } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 
 export default function SettingsPage() {
@@ -20,6 +20,8 @@ export default function SettingsPage() {
   })
   const [saved, setSaved] = useState(false)
   const [activeTab, setActiveTab] = useState('profile')
+  const [confirmReset, setConfirmReset] = useState(false)
+  const [confirmLogout, setConfirmLogout] = useState(false)
 
   const bmi = form.weight && form.height ? categorizeBMI(form.weight, form.height) : null
   const bmr = calculateBMR(form.gender, form.weight, form.height, form.age)
@@ -44,10 +46,8 @@ export default function SettingsPage() {
   }
 
   const handleResetData = () => {
-    if (window.confirm('Yakin ingin mereset semua data? Ini tidak dapat dibatalkan!')) {
-      Object.keys(localStorage).filter(k => k.startsWith('bulkmate_')).forEach(k => localStorage.removeItem(k))
-      window.location.reload()
-    }
+    Object.keys(localStorage).filter(k => k.startsWith('bulkmate_')).forEach(k => localStorage.removeItem(k))
+    window.location.reload()
   }
 
   const handleLogout = async () => {
@@ -83,7 +83,7 @@ export default function SettingsPage() {
 
   return (
     <div className="animate-fade-in space-y-5">
-      <div>
+      <div className="mobile-page-header">
         <h1 className="section-title text-xl">Pengaturan</h1>
         <p className="section-subtitle">Kelola profil dan preferensi aplikasi</p>
       </div>
@@ -265,7 +265,7 @@ export default function SettingsPage() {
                 </div>
               </button>
 
-              <button onClick={handleLogout}
+              <button onClick={() => setConfirmLogout(true)}
                 className="w-full flex items-center gap-3 p-3 rounded-xl transition-colors"
                 style={{ background: 'rgba(239,68,68,0.05)' }}>
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center"
@@ -278,7 +278,7 @@ export default function SettingsPage() {
                 </div>
               </button>
 
-              <button onClick={handleResetData}
+              <button onClick={() => setConfirmReset(true)}
                 className="w-full flex items-center gap-3 p-3 rounded-xl transition-colors"
                 style={{ background: 'rgba(239,68,68,0.05)' }}>
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center"
@@ -287,7 +287,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="text-left">
                   <div className="font-medium text-sm" style={{ color: '#ef4444' }}>Reset Semua Data</div>
-                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Hapus seluruh data aplikasi</div>
+                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Hapus seluruh data & mulai dari awal</div>
                 </div>
               </button>
             </div>
@@ -317,8 +317,61 @@ export default function SettingsPage() {
         <button onClick={handleSave}
           className="btn-primary w-full py-3 flex items-center justify-center gap-2">
           <Save size={18} />
-          {saved ? 'Tersimpan!' : 'Simpan Pengaturan'}
+          {saved ? '✓ Tersimpan!' : 'Simpan Pengaturan'}
         </button>
+      )}
+
+      {/* Confirm Reset Modal */}
+      {confirmReset && (
+        <div className="modal-overlay" onClick={() => setConfirmReset(false)}>
+          <div className="modal-content p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+                   style={{ background: 'rgba(239,68,68,0.1)' }}>
+                <Trash2 size={30} color="#ef4444" />
+              </div>
+              <h3 className="text-xl font-black mb-2" style={{ color: 'var(--text-primary)' }}>Reset Semua Data?</h3>
+              <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
+                Seluruh data kamu (log makanan, berat badan, pengeluaran, favorit) akan dihapus secara permanen.
+                Kamu akan diarahkan ke halaman setup ulang. <strong>Tindakan ini tidak bisa dibatalkan.</strong>
+              </p>
+              <div className="flex gap-3 w-full">
+                <button onClick={() => setConfirmReset(false)} className="btn-secondary flex-1">Batal</button>
+                <button onClick={handleResetData}
+                  className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-white"
+                  style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', boxShadow: '0 4px 12px rgba(239,68,68,0.3)' }}>
+                  Ya, Reset Sekarang
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Logout Modal */}
+      {confirmLogout && (
+        <div className="modal-overlay" onClick={() => setConfirmLogout(false)}>
+          <div className="modal-content p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+                   style={{ background: 'rgba(239,68,68,0.1)' }}>
+                <LogOut size={30} color="#ef4444" />
+              </div>
+              <h3 className="text-xl font-black mb-2" style={{ color: 'var(--text-primary)' }}>Keluar dari BulkMate?</h3>
+              <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
+                Sesi kamu akan dihapus. Data lokal tidak hilang, tapi kamu perlu setup ulang untuk melanjutkan.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button onClick={() => setConfirmLogout(false)} className="btn-secondary flex-1">Batal</button>
+                <button onClick={handleLogout}
+                  className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-white"
+                  style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', boxShadow: '0 4px 12px rgba(239,68,68,0.3)' }}>
+                  Keluar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

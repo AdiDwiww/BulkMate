@@ -5,6 +5,10 @@ import { supabase, isSupabaseConfigured, upsertProfile, addFoodLog, addWeightLog
 const AppContext = createContext(null)
 
 function seedDemoData() {
+  // Jangan seed jika user sudah onboarding atau sudah ada profile real
+  const onboardingDone = localStorage.getItem('bulkmate_onboarding_done')
+  if (onboardingDone) return
+
   const today = new Date().toISOString().split('T')[0]
 
   if (!localStorage.getItem('bulkmate_user')) {
@@ -96,6 +100,17 @@ function reducer(state, action) {
       localStorage.setItem('bulkmate_profile', JSON.stringify(action.payload))
       return { ...state, profile: action.payload }
 
+    case 'CLEAR_DEMO_DATA':
+      return {
+        ...state,
+        dailyLogs: [],
+        weightLogs: [],
+        expenses: [],
+        favoriteFoods: [],
+        reminders: [],
+        progressPhotos: [],
+      }
+
     case 'ADD_FOOD_LOG': {
       const newLogs = [...state.dailyLogs, { ...action.payload, id: Date.now().toString() }]
       localStorage.setItem('bulkmate_logs', JSON.stringify(newLogs))
@@ -112,6 +127,18 @@ function reducer(state, action) {
       const filteredLogs = state.dailyLogs.filter(l => l.id !== action.payload)
       localStorage.setItem('bulkmate_logs', JSON.stringify(filteredLogs))
       return { ...state, dailyLogs: filteredLogs }
+    }
+
+    case 'DELETE_WEIGHT_LOG': {
+      const filteredWeights = state.weightLogs.filter(w => w.id !== action.payload)
+      localStorage.setItem('bulkmate_weights', JSON.stringify(filteredWeights))
+      return { ...state, weightLogs: filteredWeights }
+    }
+
+    case 'UPDATE_EXPENSE': {
+      const updatedExpenses = state.expenses.map(e => e.id === action.payload.id ? action.payload : e)
+      localStorage.setItem('bulkmate_expenses', JSON.stringify(updatedExpenses))
+      return { ...state, expenses: updatedExpenses }
     }
 
     case 'ADD_WEIGHT_LOG': {

@@ -224,7 +224,7 @@ export default function AIFoodScanner() {
 
   return (
     <div className="animate-fade-in space-y-5">
-      <div>
+      <div className="mobile-page-header">
         <h1 className="section-title text-xl">AI Food Scanner</h1>
         <p className="section-subtitle">Upload foto makanan, AI akan mengidentifikasi nutrisinya</p>
       </div>

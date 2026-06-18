@@ -45,10 +45,21 @@
     color: var(--text-primary);
     transition: background-color 0.3s ease, color 0.3s ease;
     min-height: 100vh;
+    /* Prevent text resize on orientation change */
+    -webkit-text-size-adjust: 100%;
+    /* Improve touch scrolling */
+    -webkit-overflow-scrolling: touch;
   }
 
   html {
     scroll-behavior: smooth;
+    /* Better mobile scroll */
+    overscroll-behavior-y: none;
+  }
+
+  /* Remove tap highlight on mobile */
+  button, a {
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
@@ -435,5 +446,94 @@
   .recharts-tooltip-wrapper {
     border-radius: 12px !important;
     overflow: hidden;
+  }
+
+  /* =====================
+   * MOBILE IMPROVEMENTS
+   * ===================== */
+
+  /* Minimum tap target size for all interactive elements on mobile */
+  @media (max-width: 767px) {
+    button {
+      min-height: 36px;
+    }
+
+    /* Hide redundant page title/subtitle on mobile
+       (topbar already shows the page name) */
+    .mobile-page-header {
+      display: none;
+    }
+
+    /* Slightly larger card padding on mobile for better readability */
+    .stat-card {
+      padding: 16px;
+    }
+
+    /* Modal should be near full width on mobile */
+    .modal-content {
+      border-radius: 20px;
+      max-height: 92vh;
+    }
+
+    /* Smoother section titles */
+    .section-title {
+      font-size: 17px;
+    }
+
+    /* Better input size on mobile - prevents zoom on iOS */
+    .input-field {
+      font-size: 16px;
+      padding: 11px 14px;
+    }
+
+    /* Tab buttons larger on mobile */
+    .tab-btn {
+      padding: 9px 8px;
+      font-size: 12px;
+    }
+
+    /* Progress bar slightly thinner on mobile */
+    .progress-bar {
+      height: 6px;
+    }
+
+    /* Cards have slightly less gap on mobile */
+    .space-y-6 {
+      row-gap: 1rem;
+    }
+
+    /* Animate pages sliding in */
+    .animate-fade-in {
+      animation: fadeIn 0.25s ease forwards;
+    }
+  }
+
+  /* Floating action button style for primary actions */
+  .fab {
+    position: fixed;
+    bottom: 84px;
+    right: 16px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    box-shadow: 0 4px 20px rgba(34,197,94,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 40;
+  }
+
+  .fab:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 28px rgba(34,197,94,0.5);
+  }
+
+  .fab:active {
+    transform: scale(0.96);
   }
 }

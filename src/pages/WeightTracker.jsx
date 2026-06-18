@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
 import { formatDateShort } from '../utils/helpers'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Area, AreaChart
 } from 'recharts'
-import { Scale, Plus, TrendingUp, TrendingDown, Calendar, X, CalendarDays, CalendarRange, BarChart2 } from 'lucide-react'
+import { Scale, Plus, TrendingUp, TrendingDown, Calendar, X, CalendarDays, CalendarRange, BarChart2, Trash2 } from 'lucide-react'
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -100,7 +100,7 @@ export default function WeightTracker() {
   return (
     <div className="animate-fade-in space-y-5">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="mobile-page-header">
           <h1 className="section-title text-xl">Berat Badan</h1>
           <p className="section-subtitle">Pantau progress berat badan bulkingmu</p>
         </div>
@@ -194,11 +194,18 @@ export default function WeightTracker() {
                       <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{formatDateShort(log.date)}</div>
                     </div>
                   </div>
-                  {change !== 0 && (
-                    <span className={`text-sm font-bold ${change > 0 ? 'text-green-500' : 'text-red-400'}`}>
-                      {change > 0 ? '↑' : '↓'} {Math.abs(change).toFixed(1)} kg
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {change !== 0 && (
+                      <span className={`text-sm font-bold ${change > 0 ? 'text-green-500' : 'text-red-400'}`}>
+                        {change > 0 ? '↑' : '↓'} {Math.abs(change).toFixed(1)} kg
+                      </span>
+                    )}
+                    <button onClick={() => dispatch({ type: 'DELETE_WEIGHT_LOG', payload: log.id })}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
                 </div>
               )
             })}

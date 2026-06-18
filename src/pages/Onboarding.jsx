@@ -59,6 +59,13 @@ export default function Onboarding({ onComplete }) {
       carb_target: Math.round((calorieTarget * 0.45) / 4),
       fat_target: Math.round((calorieTarget * 0.25) / 9),
     }
+    // Hapus data demo yang terseed otomatis, biarkan hanya profil baru
+    localStorage.removeItem('bulkmate_logs')
+    localStorage.removeItem('bulkmate_weights')
+    localStorage.removeItem('bulkmate_expenses')
+    localStorage.removeItem('bulkmate_favorites')
+    localStorage.removeItem('bulkmate_reminders')
+    dispatch({ type: 'CLEAR_DEMO_DATA' })
     dispatch({ type: 'SET_PROFILE', payload: profile })
     dispatch({ type: 'SET_NUTRITION_TARGET', payload: profile })
     dispatch({

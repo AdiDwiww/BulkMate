@@ -137,8 +137,26 @@ export default function FavoriteFoods() {
   }
 
   const handleDelete = (id) => {
-    dispatch({ type: 'DELETE_FAVORITE', payload: id })
+    if (id.startsWith('default-')) {
+      // Simpan semua favorites (minus yang dihapus) ke state sebagai real favorites
+      const remaining = allFavorites.filter(f => f.id !== id)
+      // Clear semua favorites dari state dulu
+      favoriteFoods.forEach(f => dispatch({ type: 'DELETE_FAVORITE', payload: f.id }))
+      // Re-add yang bukan default dan yang tidak dihapus
+      remaining.forEach(f => {
+        if (!f.id.startsWith('default-')) {
+          // sudah ada di state, biarkan
+        } else {
+          dispatch({ type: 'ADD_FAVORITE', payload: { ...f, id: undefined } })
+        }
+      })
+    } else {
+      dispatch({ type: 'DELETE_FAVORITE', payload: id })
+    }
   }
+
+  // Tampilkan tombol hapus untuk semua favorites
+  const canDelete = (food) => true
 
   const handleQuickAdd = (food, mealType = 'snack') => {
     dispatch({
@@ -161,7 +179,7 @@ export default function FavoriteFoods() {
   return (
     <div className="animate-fade-in space-y-5">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="mobile-page-header">
           <h1 className="section-title text-xl">Makanan Favorit</h1>
           <p className="section-subtitle">Quick add makanan yang sering dikonsumsi</p>
         </div>
@@ -191,7 +209,7 @@ export default function FavoriteFoods() {
                   </div>
                 </div>
               </div>
-              {food.id && !food.id.startsWith('default') && (
+              {food.id && (
                 <button onClick={() => handleDelete(food.id)}
                   className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>

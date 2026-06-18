@@ -1,11 +1,11 @@
 import { LayoutDashboard, UtensilsCrossed, Camera, Scale, MoreHorizontal, Wand2 } from 'lucide-react'
 
 const mobileNavItems = [
-  { id: 'dashboard',    label: 'Beranda',  icon: LayoutDashboard },
-  { id: 'food-tracker', label: 'Makan',    icon: UtensilsCrossed },
-  { id: 'ai-scanner',   label: 'Scan AI',  icon: Camera },
-  { id: 'ai-planner',   label: 'Planner',  icon: Wand2 },
-  { id: 'weight-tracker', label: 'Berat',  icon: Scale },
+  { id: 'dashboard',      label: 'Beranda',  icon: LayoutDashboard },
+  { id: 'food-tracker',   label: 'Makan',    icon: UtensilsCrossed },
+  { id: 'ai-scanner',     label: 'Scan',     icon: Camera },
+  { id: 'ai-planner',     label: 'AI Plan',  icon: Wand2 },
+  { id: 'weight-tracker', label: 'Berat',    icon: Scale },
 ]
 
 export default function MobileNav({ activePage, onPageChange, onMenuOpen }) {
@@ -15,11 +15,11 @@ export default function MobileNav({ activePage, onPageChange, onMenuOpen }) {
       style={{
         background: 'var(--sidebar-bg)',
         borderTop: '1px solid var(--border-color)',
-        boxShadow: '0 -4px 24px rgba(0,0,0,0.1)',
+        boxShadow: '0 -8px 32px rgba(0,0,0,0.08)',
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
-      <div className="flex items-center justify-around px-1 py-1.5">
+      <div className="flex items-end justify-around px-1 pt-1.5 pb-2">
         {mobileNavItems.map(item => {
           const Icon = item.icon
           const isActive = activePage === item.id
@@ -27,26 +27,44 @@ export default function MobileNav({ activePage, onPageChange, onMenuOpen }) {
             <button
               key={item.id}
               onClick={() => onPageChange(item.id)}
-              className="flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl transition-all duration-200 min-w-0"
-              style={{
-                color: isActive ? '#22c55e' : 'var(--text-muted)',
-                background: isActive ? 'rgba(34,197,94,0.1)' : 'transparent',
-                transform: isActive ? 'scale(1.05)' : 'scale(1)',
-              }}
+              className="flex flex-col items-center gap-1 min-w-0 flex-1 relative"
+              style={{ paddingTop: '6px', paddingBottom: '2px' }}
             >
+              {/* Active indicator dot */}
+              {isActive && (
+                <span
+                  className="absolute top-0 left-1/2 w-5 h-1 rounded-full"
+                  style={{
+                    background: '#22c55e',
+                    transform: 'translateX(-50%)',
+                    boxShadow: '0 0 8px rgba(34,197,94,0.6)',
+                  }}
+                />
+              )}
+
+              {/* Icon container */}
               <div
-                className="w-6 h-6 flex items-center justify-center"
-                style={{ color: isActive ? '#22c55e' : 'var(--text-muted)' }}
-              >
-                <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} />
-              </div>
-              <span
-                className="text-center leading-tight"
+                className="w-11 h-7 flex items-center justify-center rounded-2xl transition-all duration-200"
                 style={{
-                  fontSize: '10px',
+                  background: isActive ? 'rgba(34,197,94,0.12)' : 'transparent',
+                  transform: isActive ? 'scale(1.05)' : 'scale(1)',
+                }}
+              >
+                <Icon
+                  size={20}
+                  strokeWidth={isActive ? 2.5 : 1.8}
+                  style={{ color: isActive ? '#22c55e' : 'var(--text-muted)' }}
+                />
+              </div>
+
+              {/* Label */}
+              <span
+                style={{
+                  fontSize: '9.5px',
                   fontWeight: isActive ? 700 : 500,
                   color: isActive ? '#22c55e' : 'var(--text-muted)',
                   whiteSpace: 'nowrap',
+                  lineHeight: 1,
                 }}
               >
                 {item.label}
@@ -55,16 +73,16 @@ export default function MobileNav({ activePage, onPageChange, onMenuOpen }) {
           )
         })}
 
-        {/* More / Lainnya */}
+        {/* More button */}
         <button
           onClick={onMenuOpen}
-          className="flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl transition-all duration-200"
-          style={{ color: 'var(--text-muted)' }}
+          className="flex flex-col items-center gap-1 min-w-0 flex-1"
+          style={{ paddingTop: '6px', paddingBottom: '2px' }}
         >
-          <div className="w-6 h-6 flex items-center justify-center">
-            <MoreHorizontal size={20} strokeWidth={1.8} />
+          <div className="w-11 h-7 flex items-center justify-center rounded-2xl">
+            <MoreHorizontal size={20} strokeWidth={1.8} style={{ color: 'var(--text-muted)' }} />
           </div>
-          <span style={{ fontSize: '10px', fontWeight: 500, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: '9.5px', fontWeight: 500, color: 'var(--text-muted)', whiteSpace: 'nowrap', lineHeight: 1 }}>
             Lainnya
           </span>
         </button>

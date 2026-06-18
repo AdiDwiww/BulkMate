@@ -43,7 +43,7 @@ export default function ProgressPhoto() {
   return (
     <div className="animate-fade-in space-y-5">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="mobile-page-header">
           <h1 className="section-title text-xl">Progress Photo</h1>
           <p className="section-subtitle">Dokumentasi perjalanan bulkingmu secara visual</p>
         </div>

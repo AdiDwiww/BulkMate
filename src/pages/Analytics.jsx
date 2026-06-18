@@ -125,7 +125,7 @@ export default function Analytics() {
   return (
     <div className="animate-fade-in space-y-5">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="mobile-page-header">
           <h1 className="section-title text-xl">Analytics</h1>
           <p className="section-subtitle">Analisis mendalam progress bulkingmu</p>
         </div>

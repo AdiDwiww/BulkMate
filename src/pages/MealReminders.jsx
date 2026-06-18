@@ -71,7 +71,7 @@ export default function MealReminders() {
   return (
     <div className="animate-fade-in space-y-5">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="mobile-page-header">
           <h1 className="section-title text-xl">Pengingat Makan</h1>
           <p className="section-subtitle">Atur jadwal makan agar tidak terlewat</p>
         </div>

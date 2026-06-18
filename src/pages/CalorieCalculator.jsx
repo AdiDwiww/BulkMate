@@ -12,14 +12,14 @@ export default function CalorieCalculator({ onPageChange }) {
     age: profile.age || 21,
     weight: profile.weight || 58,
     height: profile.height || 170,
-    activity: profile.activity_level || 'moderate',
+    activity_level: profile.activity_level || 'moderate',
   })
   const [result, setResult] = useState(null)
   const [saved, setSaved] = useState(false)
 
   const calculate = () => {
     const bmr = calculateBMR(form.gender, Number(form.weight), Number(form.height), Number(form.age))
-    const tdee = calculateTDEE(bmr, form.activity)
+    const tdee = calculateTDEE(bmr, form.activity_level)
     const protein = calculateProteinTarget(Number(form.weight))
     const carb = Math.round((tdee * 0.45) / 4)
     const fat = Math.round((tdee * 0.25) / 9)
@@ -49,7 +49,7 @@ export default function CalorieCalculator({ onPageChange }) {
       tdee: result.tdee,
       surplus: calorieTarget - result.tdee,
       target_weight: profile.target_weight || (Number(form.weight) + 10),
-      activity_level: form.activity,
+      activity_level: form.activity_level,
     }
     dispatch({ type: 'SET_PROFILE', payload: newProfile })
     dispatch({ type: 'SET_NUTRITION_TARGET', payload: newProfile })
@@ -64,7 +64,7 @@ export default function CalorieCalculator({ onPageChange }) {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <div>
+      <div className="mobile-page-header">
         <h1 className="section-title text-xl">Kalkulator Kalori</h1>
         <p className="section-subtitle">Hitung kebutuhan kalori harianmu untuk program bulking</p>
       </div>
@@ -152,13 +152,13 @@ export default function CalorieCalculator({ onPageChange }) {
               {Object.entries(ACTIVITY_LEVELS).map(([key, { label }]) => (
                 <button
                   key={key}
-                  onClick={() => setForm(f => ({ ...f, activity: key }))}
+                  onClick={() => setForm(f => ({ ...f, activity_level: key }))}
                   className={`w-full text-left px-4 py-3 rounded-xl text-sm border transition-all ${
-                    form.activity === key
+                    form.activity_level === key
                       ? 'border-green-500 text-green-500 font-semibold'
                       : 'border-[var(--border-color)] text-[var(--text-secondary)]'
                   }`}
-                  style={{ background: form.activity === key ? 'rgba(34,197,94,0.08)' : 'var(--bg-secondary)' }}
+                  style={{ background: form.activity_level === key ? 'rgba(34,197,94,0.08)' : 'var(--bg-secondary)' }}
                 >
                   {label}
                 </button>

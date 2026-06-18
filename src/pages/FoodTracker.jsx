@@ -211,7 +211,7 @@ export default function FoodTracker() {
   return (
     <div className="animate-fade-in space-y-5">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="mobile-page-header">
           <h1 className="section-title text-xl">Food Tracker</h1>
           <p className="section-subtitle">Catat semua makanan harianmu</p>
         </div>
@@ -220,7 +220,7 @@ export default function FoodTracker() {
           className="input-field w-auto"
           value={date}
           onChange={e => setDate(e.target.value)}
-          style={{ width: 'auto' }}
+          style={{ width: 'auto', fontSize: '14px' }}
         />
       </div>
 

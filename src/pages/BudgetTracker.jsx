@@ -66,7 +66,7 @@ export default function BudgetTracker() {
   return (
     <div className="animate-fade-in space-y-5">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="mobile-page-header">
           <h1 className="section-title text-xl">Budget Tracker</h1>
           <p className="section-subtitle">Catat pengeluaran makanan harianmu</p>
         </div>

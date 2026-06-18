@@ -15,7 +15,7 @@ export default function SnackTracker() {
 
   const target = nutritionTarget || profile || {}
   const calorieTarget = target.daily_calorie_target || 2800
-  const snackLogs = dailyLogs.filter(l => l.date === currentDate && l.is_snack)
+  const snackLogs = dailyLogs.filter(l => l.date === currentDate && l.meal_type === 'snack')
   const allLogs = dailyLogs.filter(l => l.date === currentDate)
   const totalCals = allLogs.reduce((s, l) => s + (l.calories || 0), 0)
   const snackCals = snackLogs.reduce((s, l) => s + (l.calories || 0), 0)
@@ -54,7 +54,7 @@ export default function SnackTracker() {
   return (
     <div className="animate-fade-in space-y-5">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="mobile-page-header">
           <h1 className="section-title text-xl">Tracker Jajan</h1>
           <p className="section-subtitle">Catat makanan & minuman tambahan</p>
         </div>

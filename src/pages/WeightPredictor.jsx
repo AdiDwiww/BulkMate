@@ -68,7 +68,7 @@ export default function WeightPredictor() {
 
   return (
     <div className="animate-fade-in space-y-5">
-      <div>
+      <div className="mobile-page-header">
         <h1 className="section-title text-xl">Prediksi Target Berat</h1>
         <p className="section-subtitle">Estimasi waktu mencapai berat badan idealmu</p>
       </div>
