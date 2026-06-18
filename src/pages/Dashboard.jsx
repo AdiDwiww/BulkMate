@@ -58,22 +58,23 @@ const MEAL_ICON_MAP = { Sunrise, Sun, Moon, Cookie }
 function MacroCard({ label, current, target, unit, color, icon: IconComp }) {
   const pct = Math.min((current / target) * 100, 100)
   return (
-    <div className="stat-card">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-               style={{ background: `${color}15` }}>
-            <IconComp size={15} style={{ color }} />
-          </div>
-          <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>{label}</span>
+    <div className="stat-card overflow-hidden">
+      {/* Icon + label row */}
+      <div className="flex items-center gap-1.5 mb-1">
+        <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+             style={{ background: `${color}15` }}>
+          <IconComp size={13} style={{ color }} />
         </div>
-        <span className="badge" style={{ background: `${color}15`, color }}>
-          {Math.round(pct)}%
-        </span>
+        <span className="text-xs font-semibold truncate" style={{ color: 'var(--text-secondary)' }}>{label}</span>
       </div>
-      <div className="flex items-end gap-1 mb-3">
-        <span className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{Math.round(current)}</span>
-        <span className="text-sm mb-1" style={{ color: 'var(--text-muted)' }}>/ {Math.round(target)}{unit}</span>
+      {/* Persen badge — di bawah label, tidak overflow */}
+      <span className="inline-block text-xs font-bold px-1.5 py-0.5 rounded-md mb-2"
+            style={{ background: `${color}15`, color }}>
+        {Math.round(pct)}%
+      </span>
+      <div className="flex items-end gap-0.5 mb-2">
+        <span className="text-xl font-bold leading-none" style={{ color: 'var(--text-primary)' }}>{Math.round(current)}</span>
+        <span className="text-xs mb-0.5 ml-0.5" style={{ color: 'var(--text-muted)' }}>/{Math.round(target)}{unit}</span>
       </div>
       <div className="progress-bar">
         <div
