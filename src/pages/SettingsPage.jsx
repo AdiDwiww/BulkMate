@@ -340,7 +340,7 @@ export default function SettingsPage() {
               {/* Island preview */}
               <div style={{
                 position: 'absolute',
-                top: 4,
+                top: Math.max(2, 4 + (camPos.offsetY || 0)),
                 left: `calc(50% + ${camPos.offsetX}px)`,
                 transform: 'translateX(-50%)',
                 width: 52, height: 14,
