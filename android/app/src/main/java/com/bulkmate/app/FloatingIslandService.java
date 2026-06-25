@@ -84,15 +84,31 @@ public class FloatingIslandService extends Service {
             PixelFormat.TRANSLUCENT
         );
         
-        // BUG 5: Calculate status bar height to prevent colliding with icons
+        // BUG 1 & 5: Detect DisplayCutout (punch-hole) or fallback to statusBarHeight
         int statusBarHeight = 0;
         int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
         if (resourceId > 0) statusBarHeight = getResources().getDimensionPixelSize(resourceId);
 
-        // BUG 1: Always center horizontally, don't use camX for window offset.
         lp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
         lp.x = 0; 
-        lp.y = statusBarHeight + (camY * d) + (8 * d); // Add margin below status bar
+        lp.y = statusBarHeight; // Fallback for non-cutout devices
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            root.setOnApplyWindowInsetsListener((v, insets) -> {
+                android.view.DisplayCutout cutout = insets.getDisplayCutout();
+                if (cutout != null && cutout.getBoundingRects().size() > 0) {
+                    android.graphics.Rect r = cutout.getBoundingRects().get(0);
+                    // Place exactly at punch-hole (merge with status bar area)
+                    WindowManager.LayoutParams l = (WindowManager.LayoutParams) root.getLayoutParams();
+                    int desiredY = Math.max(0, r.top);
+                    if (l.y != desiredY) {
+                        l.y = desiredY;
+                        try { ((WindowManager) getSystemService(WINDOW_SERVICE)).updateViewLayout(root, l); } catch (Exception ignored){}
+                    }
+                }
+                return insets;
+            });
+        }
 
         // Animated Background
         GradientDrawable bg = new GradientDrawable(
@@ -111,7 +127,7 @@ public class FloatingIslandService extends Service {
         // Expanded layout (State 2)
         LinearLayout exp = new LinearLayout(this);
         exp.setOrientation(LinearLayout.VERTICAL);
-        exp.setLayoutParams(new android.widget.FrameLayout.LayoutParams(300 * d, 122 * d));
+        exp.setLayoutParams(new android.widget.FrameLayout.LayoutParams(300 * d, 104 * d));
         exp.setPadding(13 * d, 12 * d, 13 * d, 11 * d);
         exp.setAlpha(0f);
         exp.setVisibility(View.GONE);
@@ -145,13 +161,22 @@ public class FloatingIslandService extends Service {
         line.setLayoutParams(lineLp);
         line.setBackgroundColor(accent);
 
-        // Buttons
+        // Buttons (Using TextView to remove default Android Button shadow/margins)
         LinearLayout btnRow = new LinearLayout(this);
         btnRow.setOrientation(LinearLayout.HORIZONTAL);
-        android.widget.Button btnOk = new android.widget.Button(this);
-        btnOk.setText("Siap Makan"); btnOk.setTextColor(Color.WHITE); btnOk.setTextSize(12f);
-        btnOk.setBackgroundColor(accent);
-        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 34 * d);
+        android.widget.TextView btnOk = new android.widget.TextView(this);
+        btnOk.setText("Siap Makan"); 
+        btnOk.setTextColor(Color.WHITE); 
+        btnOk.setTextSize(12f); 
+        btnOk.setTypeface(null, android.graphics.Typeface.BOLD);
+        btnOk.setGravity(Gravity.CENTER);
+        
+        GradientDrawable btnBg = new GradientDrawable();
+        btnBg.setColor(accent);
+        btnBg.setCornerRadius(10 * d);
+        btnOk.setBackground(btnBg);
+        
+        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 30 * d);
         btnOk.setLayoutParams(blp);
         btnOk.setOnClickListener(v -> dismissStop());
         btnRow.addView(btnOk);
@@ -172,7 +197,7 @@ public class FloatingIslandService extends Service {
             anim.addUpdateListener(a -> {
                 float val = (float) a.getAnimatedValue();
                 int w = (int) (148 * d + (300 * d - 148 * d) * val);
-                int h = (int) (36 * d + (122 * d - 36 * d) * val);
+                int h = (int) (36 * d + (104 * d - 36 * d) * val);
                 float rad = 50 * d + (26 * d - 50 * d) * val;
                 
                 lp.width = w; lp.height = h;
