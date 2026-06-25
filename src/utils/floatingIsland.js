@@ -1,80 +1,55 @@
 /**
  * FloatingIsland JS wrapper
- * Calls native FloatingIslandPlugin via Capacitor bridge.
- * Falls back silently on web/browser.
+ * Calls native FloatingIslandPlugin via Capacitor bridge directly.
  */
 
-async function getPlugin() {
-  if (typeof window === 'undefined') return null
-  if (!window.Capacitor?.isNativePlatform?.()) return null
+/** Call a native FloatingIsland plugin method directly via bridge */
+async function callNative(method, args = {}) {
   try {
-    const { registerPlugin } = await import('@capacitor/core')
-    return registerPlugin('FloatingIsland')
-  } catch {
+    if (!window?.Capacitor?.isNativePlatform?.()) return null
+    return await window.Capacitor.nativePromise('FloatingIsland', method, args)
+  } catch (e) {
+    console.warn(`FloatingIsland.${method} failed:`, e)
     return null
   }
 }
 
 /** Check if "Draw over other apps" permission is granted */
 export async function checkOverlayPermission() {
-  const p = await getPlugin()
-  if (!p) return false
-  try {
-    const r = await p.checkPermission()
-    return r.granted === true
-  } catch { return false }
+  const r = await callNative('checkPermission')
+  return r?.granted === true
 }
 
 /** Open Android Settings to grant overlay permission */
 export async function requestOverlayPermission() {
-  const p = await getPlugin()
-  if (p) {
-    try {
-      const result = await p.requestPermission()
-      // If plugin couldn't open settings, show manual instructions
-      if (result?.error) {
-        showManualInstructions()
-      }
-      return
-    } catch (e) {
-      console.warn('FloatingIsland.requestPermission error:', e)
-    }
-  }
-  // Fallback: manual instructions
-  showManualInstructions()
+  const r = await callNative('requestPermission')
+  // If native call didn't work, show manual instructions
+  if (!r) showManualInstructions()
 }
 
 function showManualInstructions() {
   alert(
-    'Buka manual:\n' +
+    'Aktifkan manual:\n' +
     'Pengaturan → Aplikasi → BulkMate → ' +
     'Tampilkan di atas app lain → Aktifkan'
   )
 }
 
-/** Save camera position to SharedPreferences (for use when app is closed) */
+/** Save camera position to SharedPreferences (used when app is closed) */
 export async function saveFloatingCameraPosition(offsetX, offsetY) {
-  const p = await getPlugin()
-  if (!p) return
-  try { await p.saveCameraPosition({ offsetX: offsetX || 0, offsetY: offsetY || 8 }) } catch {}
+  await callNative('saveCameraPosition', {
+    offsetX: offsetX || 0,
+    offsetY: offsetY || 8,
+  })
 }
 
-/** Schedule all floating island alarms (calls native AlarmManager) */
+/** Schedule all floating island alarms via native AlarmManager */
 export async function scheduleFloatingIslands(reminders) {
-  const p = await getPlugin()
-  if (!p) return false
-  try {
-    await p.scheduleAll({ reminders })
-    return true
-  } catch (e) {
-    console.warn('FloatingIsland scheduleAll failed:', e)
-    return false
-  }
+  const r = await callNative('scheduleAll', { reminders })
+  return r !== null
 }
 
 /** Cancel all scheduled floating island alarms */
 export async function cancelFloatingIslands() {
-  const p = await getPlugin()
-  if (!p) return
-  try { await p.cancelAll() } catch {}
+  await callNative('cancelAll')
 }

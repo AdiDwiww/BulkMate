@@ -35,28 +35,18 @@ public class FloatingIslandPlugin extends Plugin {
 
     @PluginMethod
     public void requestPermission(PluginCall call) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (!Settings.canDrawOverlays(getContext())) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(getContext())) {
+            getActivity().runOnUiThread(() -> {
                 try {
                     Intent intent = new Intent(
                         Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                         Uri.parse("package:" + getContext().getPackageName())
                     );
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    // Use Activity context first, fall back to App context
-                    if (getActivity() != null) {
-                        getActivity().startActivity(intent);
-                    } else {
-                        getContext().startActivity(intent);
-                    }
+                    getActivity().startActivity(intent);
                 } catch (Exception e) {
-                    // Return error so JS can show manual instructions
-                    JSObject ret = new JSObject();
-                    ret.put("error", "cannot_open_settings");
-                    call.resolve(ret);
-                    return;
+                    // Silently ignored — JS fallback handles this
                 }
-            }
+            });
         }
         JSObject ret = new JSObject();
         ret.put("opened", true);
