@@ -142,7 +142,7 @@ function AlarmModal({ alarm, onSave, onDelete, onClose }) {
           </button>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 'calc(20px + env(safe-area-inset-bottom))' }}>
+        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
 
           {/* Time display */}
           <div style={{ borderRadius: 16, padding: '16px', background: `${meta.color}10`, border: `1.5px solid ${meta.color}30`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
