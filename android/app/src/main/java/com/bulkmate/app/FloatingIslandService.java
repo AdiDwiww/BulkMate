@@ -14,6 +14,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
@@ -24,7 +25,7 @@ import androidx.core.app.NotificationCompat;
 
 public class FloatingIslandService extends Service {
 
-    private static final String CH = "fi_overlay";
+    private static final String CH  = "fi_overlay";
     private static final int    NID = 9002;
 
     private WindowManager wm;
@@ -39,7 +40,7 @@ public class FloatingIslandService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        startFg(); // Must be called first
+        startFg();
         if (intent != null && "SHOW".equals(intent.getAction())) {
             String label = intent.getStringExtra("label");
             String color = intent.getStringExtra("color");
@@ -63,8 +64,8 @@ public class FloatingIslandService extends Service {
         try { accent = Color.parseColor(colorHex); }
         catch (Exception e) { accent = Color.parseColor("#22c55e"); }
 
-        // Reuse shared pill builder
-        LinearLayout pill = FloatingIslandReceiver.buildPill(this, label, accent);
+        // Pill built by receiver (shared builder)
+        LinearLayout pill = FloatingIslandReceiver.buildPill(this, label, accent, camX);
         pill.setOnClickListener(v -> dismissStop());
         overlay = pill;
 
@@ -72,22 +73,31 @@ public class FloatingIslandService extends Service {
             ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             : WindowManager.LayoutParams.TYPE_PHONE;
 
+        // Position pill to the RIGHT of camera dot
+        int d = (int) getResources().getDisplayMetrics().density;
+        int screenW;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            screenW = wm.getCurrentWindowMetrics().getBounds().width();
+        } else {
+            DisplayMetrics dm = new DisplayMetrics();
+            wm.getDefaultDisplay().getMetrics(dm);
+            screenW = dm.widthPixels;
+        }
+
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
             wmType,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                 | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,  // ← allows positioning in status bar
+                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
         );
-        lp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+        lp.gravity = Gravity.TOP | Gravity.START;
+        lp.x = screenW / 2 + camX + (7 * d) + (4 * d); // right of camera dot
         lp.y = camY;
-        lp.x = camX;
 
-        try {
-            wm.addView(overlay, lp);
-        } catch (Exception e) { stopSelf(); return; }
+        try { wm.addView(overlay, lp); } catch (Exception e) { stopSelf(); return; }
 
         overlay.setScaleX(0.65f); overlay.setScaleY(0.65f); overlay.setAlpha(0f);
         overlay.animate().scaleX(1f).scaleY(1f).alpha(1f)
@@ -119,7 +129,8 @@ public class FloatingIslandService extends Service {
             ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).createNotificationChannel(ch);
         }
         Notification n = new NotificationCompat.Builder(this, CH)
-            .setContentTitle("BulkMate Reminder").setSmallIcon(android.R.drawable.ic_popup_reminder)
+            .setContentTitle("BulkMate Reminder")
+            .setSmallIcon(android.R.drawable.ic_popup_reminder)
             .setPriority(NotificationCompat.PRIORITY_MIN).setSilent(true).build();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(NID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);

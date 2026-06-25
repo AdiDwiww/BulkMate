@@ -432,6 +432,8 @@ export default function MealReminders() {
   // Cek status notifikasi native saat mount
   useEffect(() => {
     if (!isNative()) return
+
+    // Cek status notifikasi
     import('@capacitor/local-notifications')
       .then(({ LocalNotifications }) =>
         LocalNotifications.checkPermissions().then(p => {
@@ -439,15 +441,29 @@ export default function MealReminders() {
         })
       )
       .catch(() => setNotifStatus('unsupported'))
+
     // Cek overlay permission — jika sudah granted, langsung jadwalkan
-    checkOverlayPermission().then(granted => {
+    const checkAndScheduleOverlay = async () => {
+      const granted = await checkOverlayPermission()
       setOverlayGranted(granted)
       if (granted) {
         const camPos = getCamPos()
-        saveFloatingCameraPosition(camPos.offsetX, camPos.offsetY)
-        scheduleFloatingIslands(state.reminders || []).catch(() => {})
+        await saveFloatingCameraPosition(camPos.offsetX, camPos.offsetY)
+        await scheduleFloatingIslands(state.reminders || []).catch(() => {})
       }
-    })
+      return granted
+    }
+
+    checkAndScheduleOverlay()
+
+    // Re-check saat user kembali ke app (misal setelah dari Settings Android)
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkAndScheduleOverlay()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const requestPermission = async () => {
@@ -591,16 +607,21 @@ export default function MealReminders() {
             <button
               onClick={async () => {
                 await requestOverlayPermission()
-                // Cek permission setelah user kembali dari settings (1.5 detik)
-                setTimeout(async () => {
+                // Poll 3x setelah user balik dari Settings Android
+                // visibilitychange juga akan trigger, ini sebagai backup
+                const poll = async (attempts) => {
+                  if (attempts <= 0) return
                   const granted = await checkOverlayPermission()
                   setOverlayGranted(granted)
                   if (granted) {
                     const camPos = getCamPos()
                     await saveFloatingCameraPosition(camPos.offsetX, camPos.offsetY)
                     await scheduleFloatingIslands(reminders)
+                    return
                   }
-                }, 1500)
+                  setTimeout(() => poll(attempts - 1), 2000)
+                }
+                setTimeout(() => poll(3), 1000)
               }}
               style={{
                 fontSize: 12, padding: '7px 16px', borderRadius: 10, border: 'none',

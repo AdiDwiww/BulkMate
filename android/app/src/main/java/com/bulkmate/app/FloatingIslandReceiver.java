@@ -10,125 +10,136 @@ import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.PowerManager;
+import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
+import android.widget.Space;
 import android.widget.TextView;
 
 public class FloatingIslandReceiver extends BroadcastReceiver {
 
-    private static View activeView;
-    private static final Handler uiHandler = new Handler(Looper.getMainLooper());
+    private static View   shownView;
+    private static final Handler H = new Handler(Looper.getMainLooper());
     private static Runnable removeTask;
+    private static PowerManager.WakeLock wakeLock;
 
     @Override
     public void onReceive(Context context, Intent intent) {
         if (!"SHOW_FI".equals(intent.getAction())) return;
-
         String label = intent.getStringExtra("label");
         String color = intent.getStringExtra("color");
 
-        // Primary: start ForegroundService
+        // Acquire WakeLock to keep process alive for overlay duration
+        PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+        if (wakeLock == null || !wakeLock.isHeld()) {
+            wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "BulkMate::IslandWakeLock");
+            wakeLock.acquire(10_000L); // 10 seconds max
+        }
+
+        // Show overlay directly (reliable, no service needed)
+        H.post(() -> showOverlay(context, label != null ? label : "Pengingat", color != null ? color : "#22c55e"));
+
+        // Also try to start ForegroundService as backup
         try {
             Intent svc = new Intent(context, FloatingIslandService.class);
             svc.setAction("SHOW");
             svc.putExtra("label", label);
             svc.putExtra("color", color);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 context.startForegroundService(svc);
-            } else {
+            else
                 context.startService(svc);
-            }
-        } catch (Exception e) {
-            // Fallback: show overlay directly from receiver if service fails
-            showDirectOverlay(context, label != null ? label : "Pengingat",
-                color != null ? color : "#22c55e");
-        }
+        } catch (Exception ignored) {}
     }
 
-    /** Fallback: show overlay directly without Service (for restricted devices) */
-    private static void showDirectOverlay(Context ctx, String label, String colorHex) {
+    static void showOverlay(Context ctx, String label, String colorHex) {
         if (!android.provider.Settings.canDrawOverlays(ctx)) return;
+        removeOverlay(ctx);
 
-        uiHandler.post(() -> {
-            removeDirectOverlay(ctx);
+        int accent;
+        try { accent = Color.parseColor(colorHex); }
+        catch (Exception e) { accent = Color.parseColor("#22c55e"); }
 
-            WindowManager wm = (WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE);
-            int accent;
-            try { accent = Color.parseColor(colorHex); }
-            catch (Exception e) { accent = Color.parseColor("#22c55e"); }
+        android.content.SharedPreferences prefs = ctx.getSharedPreferences("FloatingIslandPrefs", Context.MODE_PRIVATE);
+        int camX = prefs.getInt("camX", 0);
+        int camY = prefs.getInt("camY", 6);
 
-            LinearLayout pill = buildPill(ctx, label, accent);
-            pill.setOnClickListener(v -> removeDirectOverlay(ctx));
+        LinearLayout pill = buildPill(ctx, label, accent, camX);
+        pill.setOnClickListener(v -> removeOverlay(ctx));
+        shownView = pill;
 
-            activeView = pill;
+        int wmType = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            : WindowManager.LayoutParams.TYPE_PHONE;
 
-            int wmType = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                : WindowManager.LayoutParams.TYPE_PHONE;
+        WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            wmType,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            PixelFormat.TRANSLUCENT
+        );
+        // Position pill to the RIGHT of the camera dot center
+        WindowManager wm = (WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE);
+        int d = (int) ctx.getResources().getDisplayMetrics().density;
+        int screenW = getScreenWidth(ctx, wm);
+        // Camera center = screenW/2 + camX. Start pill 8dp after camera right edge (camera radius ~7dp)
+        lp.gravity = Gravity.TOP | Gravity.START;
+        lp.x = screenW / 2 + camX + (7 * d) + (4 * d); // right of camera dot
+        lp.y = camY;
 
-            android.content.SharedPreferences prefs =
-                ctx.getSharedPreferences("FloatingIslandPrefs", Context.MODE_PRIVATE);
+        try { wm.addView(shownView, lp); } catch (Exception e) { return; }
 
-            WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                wmType,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                    | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-                    | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-                PixelFormat.TRANSLUCENT
-            );
-            lp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-            lp.y = prefs.getInt("camY", 6);
-            lp.x = prefs.getInt("camX", 0);
+        shownView.setScaleX(0.7f); shownView.setScaleY(0.7f); shownView.setAlpha(0f);
+        shownView.animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(350).start();
 
-            try {
-                wm.addView(activeView, lp);
-                // Entry animation
-                activeView.setScaleX(0.7f); activeView.setScaleY(0.7f); activeView.setAlpha(0f);
-                activeView.animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(350).start();
-
-                if (removeTask != null) uiHandler.removeCallbacks(removeTask);
-                removeTask = () -> removeDirectOverlay(ctx);
-                uiHandler.postDelayed(removeTask, 8000);
-            } catch (Exception ignored) {}
-        });
+        if (removeTask != null) H.removeCallbacks(removeTask);
+        removeTask = () -> removeOverlay(ctx);
+        H.postDelayed(removeTask, 8000);
     }
 
-    private static void removeDirectOverlay(Context ctx) {
-        if (activeView != null) {
+    private static void removeOverlay(Context ctx) {
+        if (shownView != null) {
             try {
-                WindowManager wm = (WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE);
-                wm.removeView(activeView);
+                ((WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE)).removeView(shownView);
             } catch (Exception ignored) {}
-            activeView = null;
+            shownView = null;
         }
+        if (wakeLock != null && wakeLock.isHeld()) { wakeLock.release(); wakeLock = null; }
     }
 
-    static LinearLayout buildPill(Context ctx, String label, int accent) {
-        int dp = (int) ctx.getResources().getDisplayMetrics().density;
+    /**
+     * Builds the pill view.
+     * Layout: [icon/dot] [space] [text] — no text over the camera hole.
+     * Camera is to the LEFT (pill starts from camera's right edge).
+     */
+    static LinearLayout buildPill(Context ctx, String label, int accent, int camX) {
+        int d = (int) ctx.getResources().getDisplayMetrics().density;
 
         LinearLayout pill = new LinearLayout(ctx);
         pill.setOrientation(LinearLayout.HORIZONTAL);
         pill.setGravity(Gravity.CENTER_VERTICAL);
-        pill.setPadding(14 * dp, 7 * dp, 16 * dp, 7 * dp);
-        pill.setElevation(10 * dp);
+        pill.setPadding(12 * d, 7 * d, 14 * d, 7 * d);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+            pill.setElevation(10 * d);
 
-        // Background: dark pill with glow border
         GradientDrawable bg = new GradientDrawable();
         bg.setShape(GradientDrawable.RECTANGLE);
-        bg.setCornerRadius(50 * dp);
+        bg.setCornerRadius(50 * d);
         bg.setColor(Color.parseColor("#111111"));
-        bg.setStroke(2, Color.argb(60, 255, 255, 255));
+        bg.setStroke(2, Color.argb(55, 255, 255, 255));
         pill.setBackground(bg);
 
-        // Pulsing dot
+        // Colored dot indicator
         View dot = new View(ctx);
-        LinearLayout.LayoutParams dotLp = new LinearLayout.LayoutParams(8 * dp, 8 * dp);
-        dotLp.setMarginEnd(7 * dp);
+        LinearLayout.LayoutParams dotLp = new LinearLayout.LayoutParams(8 * d, 8 * d);
+        dotLp.setMarginEnd(7 * d);
         dot.setLayoutParams(dotLp);
         GradientDrawable dotBg = new GradientDrawable();
         dotBg.setShape(GradientDrawable.OVAL);
@@ -141,11 +152,19 @@ public class FloatingIslandReceiver extends BroadcastReceiver {
         txt.setTextColor(Color.WHITE);
         txt.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f);
         txt.setTypeface(null, Typeface.BOLD);
-        txt.setLetterSpacing(0.01f);
         txt.setMaxLines(1);
 
         pill.addView(dot);
         pill.addView(txt);
         return pill;
+    }
+
+    private static int getScreenWidth(Context ctx, WindowManager wm) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            return wm.getCurrentWindowMetrics().getBounds().width();
+        }
+        DisplayMetrics dm = new DisplayMetrics();
+        wm.getDefaultDisplay().getMetrics(dm);
+        return dm.widthPixels;
     }
 }

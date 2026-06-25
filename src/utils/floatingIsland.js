@@ -1,45 +1,74 @@
 /**
- * FloatingIsland — Capacitor 8 native plugin wrapper
+ * FloatingIsland — native overlay wrapper
+ * Uses Capacitor.Plugins directly (works for manually registered plugins)
  */
-import { registerPlugin } from '@capacitor/core'
 
-const FI = registerPlugin('FloatingIsland')
+function getPlugin() {
+  try {
+    if (!window?.Capacitor?.isNativePlatform?.()) return null
+    // Capacitor makes registered plugins available on window.Capacitor.Plugins
+    const p = window.Capacitor?.Plugins?.FloatingIsland
+    return p || null
+  } catch { return null }
+}
 
 export async function checkOverlayPermission() {
-  try { const r = await FI.checkPermission(); return r?.granted === true }
-  catch { return false }
+  const p = getPlugin()
+  if (!p) return false
+  try {
+    const r = await p.checkPermission()
+    return r?.granted === true
+  } catch { return false }
 }
 
 export async function requestOverlayPermission() {
-  try { await FI.requestPermission() }
-  catch {
+  const p = getPlugin()
+  if (!p) {
+    alert('Aktifkan manual:\nPengaturan → Aplikasi → BulkMate → Tampilkan di atas app lain → Aktifkan')
+    return
+  }
+  try {
+    await p.requestPermission()
+  } catch {
     alert('Aktifkan manual:\nPengaturan → Aplikasi → BulkMate → Tampilkan di atas app lain → Aktifkan')
   }
 }
 
-/** Langsung tampilkan overlay (test / saat alarm in-app) */
+/** Tampilkan overlay langsung (test/debug) */
 export async function showFloatingIsland(label, color) {
-  try { await FI.show({ label: label || 'Pengingat', color: color || '#22c55e' }) }
+  const p = getPlugin()
+  if (!p) return
+  try { await p.show({ label: label || 'Pengingat', color: color || '#22c55e' }) }
   catch (e) { console.warn('FloatingIsland.show failed:', e) }
 }
 
-/** Sembunyikan overlay */
 export async function hideFloatingIsland() {
-  try { await FI.hide() } catch {}
+  const p = getPlugin()
+  if (!p) return
+  try { await p.hide() } catch {}
 }
 
 export async function saveFloatingCameraPosition(offsetX, offsetY) {
-  try { await FI.saveCameraPosition({ offsetX: offsetX || 0, offsetY: offsetY || 8 }) }
+  const p = getPlugin()
+  if (!p) return
+  try { await p.saveCameraPosition({ offsetX: offsetX || 0, offsetY: offsetY || 8 }) }
   catch {}
 }
 
 export async function scheduleFloatingIslands(reminders) {
+  const p = getPlugin()
+  if (!p) return false
   try {
-    await FI.scheduleAll({ remindersJson: JSON.stringify(reminders) })
+    await p.scheduleAll({ remindersJson: JSON.stringify(reminders) })
     return true
-  } catch (e) { console.warn('FloatingIsland.scheduleAll failed:', e); return false }
+  } catch (e) {
+    console.warn('FloatingIsland.scheduleAll failed:', e)
+    return false
+  }
 }
 
 export async function cancelFloatingIslands() {
-  try { await FI.cancelAll() } catch {}
+  const p = getPlugin()
+  if (!p) return
+  try { await p.cancelAll() } catch {}
 }
