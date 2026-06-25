@@ -84,7 +84,7 @@ public class FloatingIslandPlugin extends Plugin {
         cancelAllAlarms(am);
         try {
             JSONArray arr = new JSONArray(json);
-            int id = 2000;
+            StringBuilder activeIds = new StringBuilder();
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject r = arr.getJSONObject(i);
                 if (!r.optBoolean("enabled", true)) continue;
@@ -93,6 +93,7 @@ public class FloatingIslandPlugin extends Plugin {
                 String label = r.optString("label", "Pengingat");
                 String color = mealColor(r.optString("mealType", "lunch"));
                 String days  = r.optString("days", "daily");
+                int baseId = r.optInt("id", (i + 1) * 1000);
                 for (int offset = 0; offset < 8; offset++) {
                     Calendar cal = Calendar.getInstance();
                     cal.add(Calendar.DAY_OF_YEAR, offset);
@@ -102,9 +103,13 @@ public class FloatingIslandPlugin extends Plugin {
                     cal.set(Calendar.MILLISECOND, 0);
                     if (cal.getTimeInMillis() <= System.currentTimeMillis()) continue;
                     if (!dayMatch(cal, days)) continue;
-                    scheduleOne(am, id++, cal.getTimeInMillis(), label, color);
+                    int piId = baseId * 10 + offset;
+                    scheduleOne(am, piId, cal.getTimeInMillis(), label, color);
+                    activeIds.append(piId).append(",");
                 }
             }
+            getContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+                .putString("activeIds", activeIds.toString()).apply();
         } catch (Exception e) { call.reject("Parse: " + e.getMessage()); return; }
         call.resolve(new JSObject());
     }
@@ -147,13 +152,20 @@ public class FloatingIslandPlugin extends Plugin {
     }
 
     private void cancelAllAlarms(AlarmManager am) {
-        for (int id = 2000; id < 2200; id++) {
-            Intent i = new Intent(getContext(), FloatingIslandReceiver.class);
-            i.setAction("SHOW_FI");
-            PendingIntent pi = PendingIntent.getBroadcast(getContext(), id, i,
-                PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
-            if (pi != null) { am.cancel(pi); pi.cancel(); }
+        String ids = getContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("activeIds", "");
+        if (ids.isEmpty()) return;
+        for (String idStr : ids.split(",")) {
+            if (idStr.isEmpty()) continue;
+            try {
+                int id = Integer.parseInt(idStr);
+                Intent i = new Intent(getContext(), FloatingIslandReceiver.class);
+                i.setAction("SHOW_FI");
+                PendingIntent pi = PendingIntent.getBroadcast(getContext(), id, i,
+                    PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
+                if (pi != null) { am.cancel(pi); pi.cancel(); }
+            } catch (Exception ignored) {}
         }
+        getContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("activeIds", "").apply();
     }
 
     private boolean dayMatch(Calendar c, String days) {

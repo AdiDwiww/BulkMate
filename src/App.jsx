@@ -85,7 +85,15 @@ function AppContent() {
 
   // Alarm engine (in-app DynamicIsland + web SW) — cek setiap 30 detik
   useEffect(() => {
-    const check = () => {
+    const check = async () => {
+      let skipInApp = false
+      if (isNative()) {
+        try {
+          const p = window?.Capacitor?.Plugins?.FloatingIsland
+          if (p) skipInApp = (await p.checkPermission())?.granted
+        } catch(e){}
+      }
+
       const reminders = state.reminders || []
       const now = new Date()
       const minuteKey = `${now.getHours()}:${now.getMinutes()}`
@@ -100,8 +108,12 @@ function AppContent() {
         if (firedRef.current.has(r.id)) return
         if (!shouldFireNow(r)) return
         firedRef.current.add(r.id)
-        playAlarmSound(r.sound, r.repeatCount)
-        setActiveAlarm(r)
+        
+        if (!skipInApp) {
+          playAlarmSound(r.sound, r.repeatCount)
+          setActiveAlarm(r)
+        }
+        
         if (!isNative()) {
           swNotify(r.label, `Waktunya ${r.label}! Jangan lupa catat makanmu.`, `alarm-${r.id}`, r.snoozeMinutes)
         }

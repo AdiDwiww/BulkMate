@@ -56,7 +56,11 @@ public class FloatingIslandService extends Service {
     }
 
     private void show(String label, String colorHex) {
-        remove();
+        if (overlay != null) {
+            // BUG 3: Deduplicate - DO NOT create new overlay if one is already active.
+            return;
+        }
+
         SharedPreferences prefs = getSharedPreferences("FloatingIslandPrefs", MODE_PRIVATE);
         int camX = prefs.getInt("camX", 0);
         int camY = prefs.getInt("camY", 6);
@@ -76,8 +80,16 @@ public class FloatingIslandService extends Service {
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
         );
+        
+        // BUG 5: Calculate status bar height to prevent colliding with icons
+        int statusBarHeight = 0;
+        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) statusBarHeight = getResources().getDimensionPixelSize(resourceId);
+
+        // BUG 1: Always center horizontally, don't use camX for window offset.
         lp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-        lp.x = camX; lp.y = camY;
+        lp.x = 0; 
+        lp.y = statusBarHeight + (camY * d) + (8 * d); // Add margin below status bar
 
         // Animated Background
         GradientDrawable bg = new GradientDrawable(
