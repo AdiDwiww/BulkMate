@@ -22,15 +22,13 @@ public class FloatingIslandPlugin extends Plugin {
 
     private static final String PREFS = "FloatingIslandPrefs";
 
+    // ── Permission ────────────────────────────────────────────────────────────
+
     @PluginMethod
     public void checkPermission(PluginCall call) {
-        boolean granted = true;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            granted = Settings.canDrawOverlays(getContext());
-        }
-        JSObject ret = new JSObject();
-        ret.put("granted", granted);
-        call.resolve(ret);
+        boolean granted = (Build.VERSION.SDK_INT < Build.VERSION_CODES.M)
+            || Settings.canDrawOverlays(getContext());
+        JSObject r = new JSObject(); r.put("granted", granted); call.resolve(r);
     }
 
     @PluginMethod
@@ -38,25 +36,46 @@ public class FloatingIslandPlugin extends Plugin {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(getContext())) {
             getActivity().runOnUiThread(() -> {
                 try {
-                    Intent intent = new Intent(
-                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                        Uri.parse("package:" + getContext().getPackageName())
-                    );
-                    getActivity().startActivity(intent);
+                    Intent i = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:" + getContext().getPackageName()));
+                    getActivity().startActivity(i);
                 } catch (Exception ignored) {}
             });
         }
         call.resolve(new JSObject());
     }
 
+    // ── Camera position ───────────────────────────────────────────────────────
+
     @PluginMethod
     public void saveCameraPosition(PluginCall call) {
-        int x = call.getInt("offsetX", 0);
-        int y = call.getInt("offsetY", 8);
-        getContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putInt("camX", x).putInt("camY", y).apply();
+        getContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putInt("camX", call.getInt("offsetX", 0))
+            .putInt("camY", call.getInt("offsetY", 8))
+            .apply();
         call.resolve(new JSObject());
     }
+
+    // ── Direct show/hide (for testing + in-app trigger) ───────────────────────
+
+    @PluginMethod
+    public void show(PluginCall call) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(getContext())) {
+            JSObject r = new JSObject(); r.put("error", "no_permission"); call.resolve(r); return;
+        }
+        String label = call.getString("label", "Pengingat");
+        String color = call.getString("color", "#22c55e");
+        startOverlayService("SHOW", label, color);
+        call.resolve(new JSObject());
+    }
+
+    @PluginMethod
+    public void hide(PluginCall call) {
+        startOverlayService("HIDE", null, null);
+        call.resolve(new JSObject());
+    }
+
+    // ── Schedule via AlarmManager ─────────────────────────────────────────────
 
     @PluginMethod
     public void scheduleAll(PluginCall call) {
@@ -69,13 +88,11 @@ public class FloatingIslandPlugin extends Plugin {
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject r = arr.getJSONObject(i);
                 if (!r.optBoolean("enabled", true)) continue;
-                String time  = r.optString("time", "00:00");
+                String[] tp = r.optString("time", "00:00").split(":");
+                int hour = Integer.parseInt(tp[0]), minute = Integer.parseInt(tp[1]);
                 String label = r.optString("label", "Pengingat");
                 String color = mealColor(r.optString("mealType", "lunch"));
                 String days  = r.optString("days", "daily");
-                String[] tp  = time.split(":");
-                int hour   = Integer.parseInt(tp[0]);
-                int minute = Integer.parseInt(tp[1]);
                 for (int offset = 0; offset < 8; offset++) {
                     Calendar cal = Calendar.getInstance();
                     cal.add(Calendar.DAY_OF_YEAR, offset);
@@ -84,14 +101,11 @@ public class FloatingIslandPlugin extends Plugin {
                     cal.set(Calendar.SECOND, 0);
                     cal.set(Calendar.MILLISECOND, 0);
                     if (cal.getTimeInMillis() <= System.currentTimeMillis()) continue;
-                    if (!dayMatches(cal, days)) continue;
+                    if (!dayMatch(cal, days)) continue;
                     scheduleOne(am, id++, cal.getTimeInMillis(), label, color);
                 }
             }
-        } catch (Exception e) {
-            call.reject("Parse error: " + e.getMessage());
-            return;
-        }
+        } catch (Exception e) { call.reject("Parse: " + e.getMessage()); return; }
         call.resolve(new JSObject());
     }
 
@@ -101,51 +115,57 @@ public class FloatingIslandPlugin extends Plugin {
         call.resolve(new JSObject());
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private void startOverlayService(String action, String label, String color) {
+        Intent svc = new Intent(getContext(), FloatingIslandService.class);
+        svc.setAction(action);
+        if (label != null) svc.putExtra("label", label);
+        if (color != null) svc.putExtra("color", color);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            getContext().startForegroundService(svc);
+        } else {
+            getContext().startService(svc);
+        }
+    }
 
     private void scheduleOne(AlarmManager am, int id, long at, String label, String color) {
         Intent intent = new Intent(getContext(), FloatingIslandReceiver.class);
         intent.setAction("SHOW_FI");
         intent.putExtra("label", label);
         intent.putExtra("color", color);
-        intent.putExtra("alarmId", id);
-        PendingIntent pi = PendingIntent.getBroadcast(
-            getContext(), id, intent,
+        PendingIntent pi = PendingIntent.getBroadcast(getContext(), id, intent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
                 am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi);
-            } else {
+            else
                 am.setExact(AlarmManager.RTC_WAKEUP, at, pi);
-            }
-        } catch (Exception e) {
-            am.set(AlarmManager.RTC_WAKEUP, at, pi);
-        }
+        } catch (Exception e) { am.set(AlarmManager.RTC_WAKEUP, at, pi); }
     }
 
     private void cancelAllAlarms(AlarmManager am) {
         for (int id = 2000; id < 2200; id++) {
-            Intent intent = new Intent(getContext(), FloatingIslandReceiver.class);
-            intent.setAction("SHOW_FI");
-            PendingIntent pi = PendingIntent.getBroadcast(
-                getContext(), id, intent,
+            Intent i = new Intent(getContext(), FloatingIslandReceiver.class);
+            i.setAction("SHOW_FI");
+            PendingIntent pi = PendingIntent.getBroadcast(getContext(), id, i,
                 PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
             if (pi != null) { am.cancel(pi); pi.cancel(); }
         }
     }
 
-    private boolean dayMatches(Calendar cal, String days) {
-        int dow = cal.get(Calendar.DAY_OF_WEEK);
+    private boolean dayMatch(Calendar c, String days) {
+        int d = c.get(Calendar.DAY_OF_WEEK);
         if ("daily".equals(days)) return true;
-        if ("weekdays".equals(days)) return dow >= Calendar.MONDAY && dow <= Calendar.FRIDAY;
-        if ("weekends".equals(days)) return dow == Calendar.SATURDAY || dow == Calendar.SUNDAY;
+        if ("weekdays".equals(days)) return d >= Calendar.MONDAY && d <= Calendar.FRIDAY;
+        if ("weekends".equals(days)) return d == Calendar.SATURDAY || d == Calendar.SUNDAY;
         return true;
     }
 
-    private String mealColor(String type) {
-        if ("breakfast".equals(type)) return "#f97316";
-        if ("dinner".equals(type))    return "#6366f1";
-        if ("snack".equals(type))     return "#a855f7";
+    private String mealColor(String t) {
+        if ("breakfast".equals(t)) return "#f97316";
+        if ("dinner".equals(t))    return "#6366f1";
+        if ("snack".equals(t))     return "#a855f7";
         return "#22c55e";
     }
 }

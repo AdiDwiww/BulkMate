@@ -12,7 +12,8 @@ import {
   scheduleAllNativeReminders, isNative,
 } from '../utils/alarmEngine'
 import {
-  checkOverlayPermission, requestOverlayPermission, scheduleFloatingIslands
+  checkOverlayPermission, requestOverlayPermission, scheduleFloatingIslands,
+  saveFloatingCameraPosition, showFloatingIsland
 } from '../utils/floatingIsland'
 
 const MEAL_TYPES = [
@@ -614,9 +615,20 @@ export default function MealReminders() {
       )}
 
       {isNative() && overlayGranted && (
-        <div style={{ borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
-          <AlarmCheck size={15} style={{ color: '#6366f1', flexShrink: 0 }} />
-          <span style={{ fontSize: 12, color: '#6366f1', fontWeight: 600 }}>Dynamic Island aktif — pill muncul meski app ditutup</span>
+        <div style={{ borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <AlarmCheck size={15} style={{ color: '#6366f1', flexShrink: 0 }} />
+            <span style={{ fontSize: 12, color: '#6366f1', fontWeight: 600 }}>Dynamic Island aktif</span>
+          </div>
+          <button
+            onClick={() => showFloatingIsland('Makan Siang', '#22c55e')}
+            style={{
+              fontSize: 11, padding: '5px 12px', borderRadius: 8, border: 'none',
+              background: '#6366f1', color: '#fff', fontWeight: 700, cursor: 'pointer', flexShrink: 0
+            }}
+          >
+            Test Overlay
+          </button>
         </div>
       )}
 
