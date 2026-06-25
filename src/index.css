@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@source "../src/**/*.{js,jsx}";
+
 
 @layer base {
   :root {
@@ -535,5 +537,78 @@
 
   .fab:active {
     transform: scale(0.96);
+  }
+
+  /* =====================
+   * SIDEBAR LAYOUT (pure CSS — tidak butuh Tailwind responsive)
+   * ===================== */
+
+  /* Mobile sidebar: fixed overlay, disembunyikan via transform */
+  .sidebar-mobile {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 288px;
+    z-index: 50;
+    transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Desktop sidebar: sticky column, sembunyikan di mobile */
+  .sidebar-desktop {
+    display: none;
+    flex-direction: column;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    flex-shrink: 0;
+    transition: width 0.3s ease;
+  }
+
+  /* Mobile top header */
+  .mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: var(--sidebar-bg);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+
+  /* Mobile bottom nav */
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: var(--sidebar-bg);
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.08);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Desktop: tampilkan sidebar desktop, sembunyikan elemen mobile */
+  @media (min-width: 768px) {
+    .sidebar-mobile {
+      display: none !important;
+    }
+    .sidebar-desktop {
+      display: flex;
+    }
+    .mobile-header {
+      display: none;
+    }
+    .mobile-bottom-nav {
+      display: none;
+    }
   }
 }

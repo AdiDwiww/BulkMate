@@ -10,16 +10,8 @@ const mobileNavItems = [
 
 export default function MobileNav({ activePage, onPageChange }) {
   return (
-    <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-50"
-      style={{
-        background: 'var(--sidebar-bg)',
-        borderTop: '1px solid var(--border-color)',
-        boxShadow: '0 -8px 32px rgba(0,0,0,0.08)',
-        paddingBottom: 'env(safe-area-inset-bottom)',
-      }}
-    >
-      <div className="flex items-end justify-around px-1 pt-1.5 pb-2">
+    <nav className="mobile-bottom-nav">
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', padding: '6px 4px 8px', width: '100%' }}>
         {mobileNavItems.map(item => {
           const Icon = item.icon
           const isActive = activePage === item.id

@@ -110,20 +110,35 @@ export default function Sidebar({ activePage, onPageChange, mobileOpen, setMobil
       {/* Mobile overlay backdrop */}
       {mobileOpen && (
         <div
-          className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
           onClick={() => setMobileOpen(false)}
+          style={{
+            display: 'block',
+            position: 'fixed',
+            inset: 0,
+            zIndex: 40,
+            background: 'rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(4px)',
+          }}
         />
       )}
 
-      {/* Mobile slide-in sidebar */}
+      {/* Mobile slide-in sidebar — always fixed, transform controls visibility */}
       <aside
-        className={`md:hidden fixed top-0 left-0 h-full z-50 w-72 transition-transform duration-300 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
-        style={{ background: 'var(--sidebar-bg)', borderRight: '1px solid var(--border-color)' }}
+        className="sidebar-mobile"
+        style={{
+          transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
+          background: 'var(--sidebar-bg)',
+          borderRight: '1px solid var(--border-color)',
+        }}
       >
         <button
           onClick={() => setMobileOpen(false)}
-          className="absolute top-4 right-4 w-8 h-8 rounded-lg flex items-center justify-center"
-          style={{ background: 'var(--bg-secondary)' }}
+          style={{
+            position: 'absolute', top: 16, right: 16,
+            width: 32, height: 32, borderRadius: 8,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'var(--bg-secondary)', border: 'none', cursor: 'pointer',
+          }}
         >
           <X size={16} style={{ color: 'var(--text-secondary)' }} />
         </button>
@@ -132,8 +147,12 @@ export default function Sidebar({ activePage, onPageChange, mobileOpen, setMobil
 
       {/* Desktop sidebar */}
       <aside
-        className={`hidden md:flex flex-col h-screen sticky top-0 transition-all duration-300 flex-shrink-0 ${collapsed ? 'w-16' : 'w-64'}`}
-        style={{ background: 'var(--sidebar-bg)', borderRight: '1px solid var(--border-color)' }}
+        className="sidebar-desktop"
+        style={{
+          width: collapsed ? 64 : 256,
+          background: 'var(--sidebar-bg)',
+          borderRight: '1px solid var(--border-color)',
+        }}
       >
         <SidebarContent onNavClick={onPageChange} />
       </aside>

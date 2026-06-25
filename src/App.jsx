@@ -78,8 +78,8 @@ function AppContent() {
   const pageTitle = PAGE_TITLES[activePage] || 'BulkMate'
 
   return (
-    <div className="flex min-h-screen" style={{ background: 'var(--bg-primary)' }}>
-      {/* Desktop & Mobile overlay sidebar */}
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)' }}>
+      {/* Sidebar */}
       <Sidebar
         activePage={activePage}
         onPageChange={handleNav}
@@ -88,60 +88,46 @@ function AppContent() {
       />
 
       {/* Main content */}
-      <main className="flex-1 min-w-0 overflow-auto flex flex-col">
+      <main style={{ flex: 1, minWidth: 0, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
 
         {/* Mobile Top Header */}
-        <header
-          className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4"
-          style={{
-            height: '56px',
-            background: 'var(--sidebar-bg)',
-            borderBottom: '1px solid var(--border-color)',
-            boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-          }}
-        >
+        <header className="mobile-header">
           {/* Left: Hamburger + Logo */}
-          <div className="flex items-center gap-2.5">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: 'var(--bg-secondary)' }}
+              style={{ width: 36, height: 36, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-secondary)', border: 'none', cursor: 'pointer' }}
             >
               <Menu size={18} style={{ color: 'var(--text-secondary)' }} />
             </button>
             {activePage === 'dashboard' ? (
-              <div className="flex items-center gap-2">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div
-                  className="w-7 h-7 rounded-lg gradient-green flex items-center justify-center"
-                  style={{ boxShadow: '0 2px 8px rgba(34,197,94,0.4)' }}
+                  className="gradient-green"
+                  style={{ width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(34,197,94,0.4)' }}
                 >
                   <Zap size={14} color="white" />
                 </div>
-                <span className="font-black text-base" style={{ color: 'var(--text-primary)' }}>BulkMate</span>
+                <span style={{ fontWeight: 900, fontSize: 16, color: 'var(--text-primary)' }}>BulkMate</span>
               </div>
             ) : (
-              <span className="font-bold text-base" style={{ color: 'var(--text-primary)' }}>{pageTitle}</span>
+              <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>{pageTitle}</span>
             )}
           </div>
 
           {/* Right: Theme toggle + Settings shortcut */}
-          <div className="flex items-center gap-1.5">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <button
               onClick={() => dispatch({ type: 'SET_THEME', payload: state.theme === 'dark' ? 'light' : 'dark' })}
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: 'var(--bg-secondary)' }}
+              style={{ width: 36, height: 36, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-secondary)', border: 'none', cursor: 'pointer' }}
             >
               {state.theme === 'dark'
                 ? <Sun size={17} style={{ color: '#f97316' }} />
-                : <Moon size={17} style={{ color: 'var(--text-secondary)' }} />
-              }
+                : <Moon size={17} style={{ color: 'var(--text-secondary)' }} />}
             </button>
             <button
               onClick={() => handleNav('settings')}
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{
-                background: activePage === 'settings' ? 'rgba(34,197,94,0.12)' : 'var(--bg-secondary)',
-              }}
+              style={{ width: 36, height: 36, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: activePage === 'settings' ? 'rgba(34,197,94,0.12)' : 'var(--bg-secondary)', border: 'none', cursor: 'pointer' }}
             >
               <Settings size={17} style={{ color: activePage === 'settings' ? '#22c55e' : 'var(--text-secondary)' }} />
             </button>
@@ -149,8 +135,7 @@ function AppContent() {
         </header>
 
         {/* Page Content */}
-        {/* Mobile: pt-4 pb-20. Desktop: pt-8 pb-8 */}
-        <div className="flex-1 max-w-2xl mx-auto w-full px-4 pt-4 pb-20 md:pt-8 md:pb-8 md:px-6">
+        <div style={{ flex: 1, maxWidth: 672, margin: '0 auto', width: '100%', padding: '16px 16px 80px' }}>
           <Suspense fallback={<PageSkeleton />}>
             {renderPage()}
           </Suspense>
