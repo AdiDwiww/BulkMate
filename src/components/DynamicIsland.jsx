@@ -140,7 +140,7 @@ export default function DynamicIsland({ alarm, onDismiss, onSnooze }) {
                   border: '1px solid rgba(255,255,255,0.12)',
                   color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
                 }}>
-                  ⏰ Snooze {alarm.snoozeMinutes}m
+                  Snooze {alarm.snoozeMinutes}m
                 </button>
               )}
               <button onClick={dismiss} style={{
@@ -148,7 +148,7 @@ export default function DynamicIsland({ alarm, onDismiss, onSnooze }) {
                 background: `linear-gradient(135deg, ${meta.color}, ${meta.color}cc)`,
                 border: 'none', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
               }}>
-                ✓ Siap Makan!
+                Siap Makan
               </button>
             </div>
           </div>

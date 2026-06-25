@@ -611,4 +611,14 @@
       display: none;
     }
   }
+
+  /* Collapse button hanya di desktop */
+  .sidebar-collapse-btn {
+    display: none;
+  }
+  @media (min-width: 768px) {
+    .sidebar-collapse-btn {
+      display: flex;
+    }
+  }
 }

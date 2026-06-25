@@ -78,7 +78,7 @@ function AppContent() {
         setActiveAlarm(r)
 
         // 3. Native notification (lock screen)
-        const title = `🍽️ ${r.label}`
+        const title = r.label
         const body = `Waktunya ${r.label}! Jangan lupa catat makanmu.`
         swNotify(title, body, `alarm-${r.id}`, r.snoozeMinutes)
       })
@@ -95,7 +95,7 @@ function AppContent() {
     setTimeout(() => {
       playAlarmSound(alarm.sound, alarm.repeatCount)
       setActiveAlarm({ ...alarm, _snoozed: true })
-      swNotify(`⏰ ${alarm.label}`, 'Snooze selesai! Waktunya makan.', `alarm-${alarm.id}-snooze`, alarm.snoozeMinutes)
+      swNotify(`Snooze Selesai: ${alarm.label}`, 'Waktunya makan sekarang!', `alarm-${alarm.id}-snooze`, alarm.snoozeMinutes)
     }, (alarm.snoozeMinutes || 5) * 60 * 1000)
   }
 

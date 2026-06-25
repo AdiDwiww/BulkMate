@@ -27,8 +27,8 @@ function showMealNotif({ title, body, tag, snoozeMinutes = 5 }) {
     requireInteraction: true,
     data: { snoozeMinutes, title, body, tag },
     actions: [
-      { action: 'ok',     title: '✓ Oke!' },
-      { action: 'snooze', title: `⏰ Snooze ${snoozeMinutes} mnt` },
+      { action: 'ok',     title: 'Oke' },
+      { action: 'snooze', title: `Snooze ${snoozeMinutes} menit` },
     ],
   })
 }
