@@ -49,37 +49,25 @@ function Toggle({ value, onChange, color = '#22c55e', size = 'md' }) {
   return (
     <button
       type="button"
-      onClick={(e) => {
-        e.stopPropagation() // Prevent triggering the card's click event
-        onChange(!value)
-      }}
+      className="toggle-switch"
+      onClick={(e) => { e.stopPropagation(); onChange(!value) }}
       style={{
-        width: w,
-        height: h,
-        borderRadius: h / 2,
-        border: 'none',
-        cursor: 'pointer',
-        flexShrink: 0,
+        width: w, height: h, borderRadius: h / 2,
+        border: 'none', cursor: 'pointer', flexShrink: 0,
         background: value ? color : 'var(--border-color)',
-        position: 'relative',
-        transition: 'background 0.25s ease',
-        display: 'inline-flex',
-        alignItems: 'center',
-        padding: 0,
-        outline: 'none',
+        position: 'relative', transition: 'background 0.25s ease',
+        display: 'inline-block', padding: 0, outline: 'none',
+        minHeight: 'unset', verticalAlign: 'middle',
+        WebkitAppearance: 'none', appearance: 'none',
       }}
     >
       <span style={{
-        width: d,
-        height: d,
-        borderRadius: '50%',
-        background: '#fff',
+        width: d, height: d, borderRadius: '50%', background: '#fff',
         position: 'absolute',
-        top: (h - d) / 2,
-        left: value ? on : off,
+        top: off, left: value ? on : off,
         transition: 'left 0.25s ease',
         boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
-        display: 'block',
+        display: 'block', pointerEvents: 'none',
       }} />
     </button>
   )
@@ -154,32 +142,23 @@ function AlarmModal({ alarm, onSave, onDelete, onClose }) {
           </button>
         </div>
 
-        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 20, overflowY: 'auto', maxHeight: '75vh' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 'calc(20px + env(safe-area-inset-bottom))' }}>
 
-          {/* Time Picker (Centered, auto-width to look like a digital clock widget) */}
-          <div style={{ textAlign: 'center' }}>
+          {/* Time display */}
+          <div style={{ borderRadius: 16, padding: '16px', background: `${meta.color}10`, border: `1.5px solid ${meta.color}30`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
             <SLabel>Waktu Alarm</SLabel>
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 4 }}>
-              <input
-                type="time"
-                className="input-field"
-                value={form.time}
-                onChange={e => set('time', e.target.value)}
-                style={{
-                  fontSize: 32,
-                  fontWeight: 900,
-                  textAlign: 'center',
-                  padding: '10px 18px',
-                  letterSpacing: 2,
-                  width: 'auto',
-                  maxWidth: 180,
-                  border: `2px solid ${meta.color}40`,
-                  background: 'var(--bg-secondary)',
-                  borderRadius: 16,
-                  outline: 'none',
-                }}
-              />
-            </div>
+            <input
+              type="time"
+              value={form.time}
+              onChange={e => set('time', e.target.value)}
+              style={{
+                fontSize: 44, fontWeight: 900, letterSpacing: 4,
+                color: 'var(--text-primary)', background: 'transparent',
+                border: 'none', outline: 'none', textAlign: 'center',
+                width: '100%', cursor: 'pointer', padding: '4px 0',
+                fontFamily: 'inherit',
+              }}
+            />
           </div>
 
           {/* Label */}
