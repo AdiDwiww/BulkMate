@@ -438,9 +438,16 @@ export default function MealReminders() {
         })
       )
       .catch(() => setNotifStatus('unsupported'))
-    // Cek overlay permission
-    checkOverlayPermission().then(setOverlayGranted)
-  }, [])
+    // Cek overlay permission — jika sudah granted, langsung jadwalkan
+    checkOverlayPermission().then(granted => {
+      setOverlayGranted(granted)
+      if (granted) {
+        const camPos = getCamPos()
+        saveFloatingCameraPosition(camPos.offsetX, camPos.offsetY)
+        scheduleFloatingIslands(state.reminders || []).catch(() => {})
+      }
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const requestPermission = async () => {
     if (isNative()) {
@@ -473,9 +480,20 @@ export default function MealReminders() {
     }
   }
 
+  // Baca posisi kamera dari localStorage
+  const getCamPos = () => {
+    try {
+      const s = localStorage.getItem('bulkmate_camera_position')
+      if (s) return JSON.parse(s)
+    } catch {}
+    return { offsetX: 0, offsetY: 8 }
+  }
+
   const scheduleAll = async (next) => {
     if (!isNative()) return
     await scheduleAllNativeReminders(next)
+    const camPos = getCamPos()
+    await saveFloatingCameraPosition(camPos.offsetX, camPos.offsetY)
     await scheduleFloatingIslands(next)
   }
 
@@ -572,7 +590,16 @@ export default function MealReminders() {
             <button
               onClick={async () => {
                 await requestOverlayPermission()
-                setTimeout(() => checkOverlayPermission().then(setOverlayGranted), 1500)
+                // Cek permission setelah user kembali dari settings (1.5 detik)
+                setTimeout(async () => {
+                  const granted = await checkOverlayPermission()
+                  setOverlayGranted(granted)
+                  if (granted) {
+                    const camPos = getCamPos()
+                    await saveFloatingCameraPosition(camPos.offsetX, camPos.offsetY)
+                    await scheduleFloatingIslands(reminders)
+                  }
+                }, 1500)
               }}
               style={{
                 fontSize: 12, padding: '7px 16px', borderRadius: 10, border: 'none',
