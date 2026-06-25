@@ -26,7 +26,12 @@ export default function Sidebar({ activePage, onPageChange, mobileOpen, setMobil
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
 
       {/* Logo */}
-      <div style={{ padding: '16px', borderBottom: '1px solid var(--border-color)', flexShrink: 0 }}>
+      <div style={{
+        padding: '16px',
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)',
+        borderBottom: '1px solid var(--border-color)',
+        flexShrink: 0
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div
             className="gradient-green"
@@ -135,7 +140,14 @@ export default function Sidebar({ activePage, onPageChange, mobileOpen, setMobil
       >
         <button
           onClick={() => setMobileOpen(false)}
-          style={{ position: 'absolute', top: 14, right: 14, width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-secondary)', border: 'none', cursor: 'pointer', zIndex: 1 }}
+          style={{
+            position: 'absolute',
+            top: 'calc(env(safe-area-inset-top, 0px) + 14px)',
+            right: 14,
+            width: 32, height: 32, borderRadius: 8,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'var(--bg-secondary)', border: 'none', cursor: 'pointer', zIndex: 1
+          }}
         >
           <X size={16} style={{ color: 'var(--text-secondary)' }} />
         </button>

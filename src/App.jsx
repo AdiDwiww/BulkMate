@@ -210,7 +210,7 @@ function AppContent() {
         </header>
 
         {/* Page Content */}
-        <div style={{ flex: 1, maxWidth: 672, margin: '0 auto', width: '100%', padding: '16px 16px 80px' }}>
+        <div style={{ flex: 1, maxWidth: 672, margin: '0 auto', width: '100%', padding: '16px 16px', paddingBottom: 'calc(90px + env(safe-area-inset-bottom, 0px))' }}>
           <Suspense fallback={<PageSkeleton />}>
             {renderPage()}
           </Suspense>

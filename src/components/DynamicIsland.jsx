@@ -13,19 +13,29 @@ function getCameraPosition() {
     const saved = localStorage.getItem('bulkmate_camera_position')
     if (saved) return JSON.parse(saved)
   } catch {}
-  return { offsetX: 0, offsetY: 0 }
+  return { offsetX: 0, offsetY: 6 }
 }
 
 export default function DynamicIsland({ alarm, onDismiss, onSnooze }) {
-  // visible: apakah island tampil sama sekali
-  // expanded: pill → expanded
-  const [visible, setVisible]   = useState(false)
-  const [expanded, setExpanded] = useState(false)
-  const [mounted, setMounted]   = useState(false) // untuk animasi masuk
+  const [show, setShow]         = useState(false)   // apakah elemen di-render
+  const [entering, setEntering] = useState(false)   // class animasi masuk
+  const [expanded, setExpanded] = useState(false)   // pill → card
+  const [leaving, setLeaving]   = useState(false)   // class animasi keluar
   const [camPos, setCamPos]     = useState(getCameraPosition)
-  const autoRef    = useRef(null)
-  const expandRef  = useRef(null)
-  const dismissRef = useRef(null)
+  const autoRef   = useRef(null)
+  const timerRefs = useRef([])
+
+  const clearAll = () => {
+    clearTimeout(autoRef.current)
+    timerRefs.current.forEach(clearTimeout)
+    timerRefs.current = []
+  }
+
+  const addTimer = (fn, ms) => {
+    const id = setTimeout(fn, ms)
+    timerRefs.current.push(id)
+    return id
+  }
 
   // Sync posisi kamera
   useEffect(() => {
@@ -35,140 +45,120 @@ export default function DynamicIsland({ alarm, onDismiss, onSnooze }) {
     return () => { window.removeEventListener('storage', onStorage); clearInterval(poll) }
   }, [])
 
-  // Saat alarm berubah
+  // Lifecycle: alarm berubah
   useEffect(() => {
-    // Clear semua timer lama
-    clearTimeout(autoRef.current)
-    clearTimeout(expandRef.current)
-    clearTimeout(dismissRef.current)
+    clearAll()
 
     if (!alarm) {
-      // Tutup dengan animasi
-      setExpanded(false)
-      dismissRef.current = setTimeout(() => {
-        setMounted(false)
-        setTimeout(() => setVisible(false), 350)
-      }, 200)
+      // Tutup jika sedang terbuka
+      if (show) closeAnim(onDismiss)
       return
     }
 
-    // Munculkan island
-    setVisible(true)
+    // Mulai sequence: render → fade-in pill → expand → auto close
+    setLeaving(false)
     setExpanded(false)
-    setMounted(false)
+    setEntering(false)
+    setShow(true)
 
-    // Step 1: mount (fade-in pill)
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => setMounted(true))
-    })
+    // Satu frame delay supaya animasi enter bisa berjalan
+    addTimer(() => setEntering(true), 16)
+    // Expand ke card setelah 350ms
+    addTimer(() => setExpanded(true), 350)
+    // Auto-dismiss setelah 10 detik
+    autoRef.current = setTimeout(() => closeAnim(onDismiss), 10000)
 
-    // Step 2: expand ke full card setelah 400ms
-    expandRef.current = setTimeout(() => setExpanded(true), 400)
-
-    // Step 3: auto-dismiss setelah 12 detik
-    autoRef.current = setTimeout(() => {
-      setExpanded(false)
-      setTimeout(() => {
-        setMounted(false)
-        setTimeout(() => { setVisible(false); onDismiss?.() }, 350)
-      }, 350)
-    }, 12000)
-
-    return () => {
-      clearTimeout(autoRef.current)
-      clearTimeout(expandRef.current)
-      clearTimeout(dismissRef.current)
-    }
+    return clearAll
   }, [alarm]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const dismiss = () => {
-    clearTimeout(autoRef.current)
-    setExpanded(false)
-    setTimeout(() => {
-      setMounted(false)
-      setTimeout(() => { setVisible(false); onDismiss?.() }, 350)
-    }, 300)
+  /** Animasi keluar: mengecil lalu hilang */
+  const closeAnim = (cb) => {
+    clearAll()
+    setExpanded(false)           // tutup card dulu (mengecil ke pill)
+    addTimer(() => {
+      setLeaving(true)           // pill mengecil + fade out
+      addTimer(() => {
+        setShow(false)           // baru hapus dari DOM
+        setLeaving(false)
+        setEntering(false)
+        cb?.()
+      }, 300)
+    }, 280)
   }
 
-  const snooze = () => {
-    clearTimeout(autoRef.current)
-    setExpanded(false)
-    setTimeout(() => {
-      setMounted(false)
-      setTimeout(() => { setVisible(false); onSnooze?.(alarm) }, 350)
-    }, 300)
+  const dismiss = () => closeAnim(onDismiss)
+  const snooze  = () => closeAnim(() => onSnooze?.(alarm))
+
+  if (!show || !alarm) return null
+
+  const meta = MEAL_META[alarm.mealType] || MEAL_META.lunch
+  const Icon = meta.icon
+
+  // ── Posisi: offsetX dari tengah, offsetY dari atas (default 6px = di kamera) ──
+  const left = `calc(50% + ${camPos.offsetX || 0}px)`
+  const top  = `${camPos.offsetY ?? 6}px`
+
+  // ── Style island ──
+  const islandStyle = {
+    background: 'linear-gradient(145deg, #0a0a0a 0%, #1a1a1a 100%)',
+    borderRadius: expanded ? 26 : 50,
+    width:     expanded ? 300 : 148,
+    overflow:  'hidden',
+    cursor:    expanded ? 'default' : 'pointer',
+    pointerEvents: 'all',
+    boxShadow: [
+      '0 0 0 1px rgba(255,255,255,0.10)',
+      `0 0 20px ${meta.color}40`,
+      '0 6px 28px rgba(0,0,0,0.7)',
+    ].join(', '),
+    // Transisi ukuran (spring)
+    transition: [
+      'width 0.40s cubic-bezier(0.34,1.56,0.64,1)',
+      'border-radius 0.40s cubic-bezier(0.34,1.56,0.64,1)',
+    ].join(', '),
+    // Animasi masuk/keluar via opacity + scale
+    opacity:   (entering && !leaving) ? 1 : 0,
+    transform: leaving
+      ? 'translateX(-50%) scale(0.72)'      // KELUAR: mengecil
+      : entering
+        ? 'translateX(-50%) scale(1)'       // TAMPIL: normal
+        : 'translateX(-50%) scale(0.82)',   // AWAL: kecil (siap masuk)
+    transitionProperty: 'opacity, transform, width, border-radius',
+    transitionDuration: leaving
+      ? '0.28s, 0.28s, 0.40s, 0.40s'
+      : '0.35s, 0.35s, 0.40s, 0.40s',
+    transitionTimingFunction: leaving
+      ? 'ease-in, ease-in, cubic-bezier(0.34,1.56,0.64,1), cubic-bezier(0.34,1.56,0.64,1)'
+      : 'cubic-bezier(0.34,1.56,0.64,1), cubic-bezier(0.34,1.56,0.64,1), cubic-bezier(0.34,1.56,0.64,1), cubic-bezier(0.34,1.56,0.64,1)',
+    position: 'relative',
   }
-
-  if (!visible || !alarm) return null
-
-  const meta   = MEAL_META[alarm.mealType] || MEAL_META.lunch
-  const Icon   = meta.icon
-
-  // Posisi
-  const translateX = `calc(-50% + ${camPos.offsetX || 0}px)`
-  const topOffset  = `max(env(safe-area-inset-top, 8px), ${8 + (camPos.offsetY || 0)}px)`
 
   return (
     <>
       <style>{`
         @keyframes di-pulse {
           0%,100%{ opacity:1; transform:scale(1) }
-          50%{ opacity:0.55; transform:scale(1.35) }
+          50%{ opacity:0.5; transform:scale(1.4) }
         }
         @keyframes di-glow {
-          0%,100%{ opacity:0.2; transform:scale(1) }
-          50%{ opacity:0.55; transform:scale(1.05) }
-        }
-        @keyframes di-fadein {
-          from { opacity:0; transform:translateY(-12px) scale(0.92) }
-          to   { opacity:1; transform:translateY(0)    scale(1)    }
-        }
-        @keyframes di-fadeout {
-          from { opacity:1; transform:translateY(0)    scale(1)    }
-          to   { opacity:0; transform:translateY(-10px) scale(0.94) }
+          0%,100%{ opacity:0.18 }
+          50%{ opacity:0.50 }
         }
       `}</style>
 
-      {/* Wrapper posisi */}
+      {/* Posisi tepat di kamera depan */}
       <div style={{
         position: 'fixed',
-        top: topOffset,
-        left: '50%',
-        transform: `translateX(${translateX})`,
+        top,
+        left,
         zIndex: 9999,
         pointerEvents: 'none',
       }}>
-        {/* Island container */}
         <div
-          style={{
-            background: 'linear-gradient(145deg, #0d0d0d 0%, #1c1c1c 100%)',
-            borderRadius: expanded ? 26 : 50,
-            overflow: 'hidden',
-            pointerEvents: 'all',
-            cursor: expanded ? 'default' : 'pointer',
-            boxShadow: [
-              '0 0 0 1px rgba(255,255,255,0.10)',
-              `0 0 24px ${meta.color}45`,
-              '0 8px 32px rgba(0,0,0,0.65)',
-            ].join(', '),
-            // Animasi masuk/keluar
-            animation: mounted
-              ? 'di-fadein 0.38s cubic-bezier(0.34,1.56,0.64,1) forwards'
-              : 'di-fadeout 0.32s ease-in forwards',
-            // Size transition
-            width:     expanded ? 300 : 148,
-            minHeight: expanded ? 'auto' : 36,
-            transition: [
-              'width 0.42s cubic-bezier(0.34,1.56,0.64,1)',
-              'border-radius 0.42s cubic-bezier(0.34,1.56,0.64,1)',
-              'box-shadow 0.3s ease',
-            ].join(', '),
-            position: 'relative',
-          }}
+          style={islandStyle}
           onClick={() => { if (!expanded) setExpanded(true) }}
         >
-
-          {/* ── PILL (collapsed) ─────────────────────────────── */}
+          {/* ── PILL ── */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -179,87 +169,88 @@ export default function DynamicIsland({ alarm, onDismiss, onSnooze }) {
             position: 'absolute',
             top: 0, left: 0, right: 0,
             opacity:   expanded ? 0 : 1,
-            transform: expanded ? 'scale(0.85)' : 'scale(1)',
+            transform: expanded ? 'scale(0.8)' : 'scale(1)',
             transition: 'opacity 0.22s ease, transform 0.22s ease',
             pointerEvents: expanded ? 'none' : 'auto',
           }}>
             <div style={{
               width: 7, height: 7, borderRadius: '50%',
-              background: meta.color,
+              background: meta.color, flexShrink: 0,
               animation: 'di-pulse 1.2s ease-in-out infinite',
-              flexShrink: 0,
             }} />
             <Bell size={12} color="white" />
             <span style={{
               color: '#fff', fontSize: 11.5, fontWeight: 700,
-              letterSpacing: 0.15, whiteSpace: 'nowrap',
+              letterSpacing: 0.1, whiteSpace: 'nowrap',
             }}>
               Waktunya {meta.label}!
             </span>
           </div>
 
-          {/* ── EXPANDED content ─────────────────────────────── */}
+          {/* ── EXPANDED ── */}
           <div style={{
-            padding: '14px 14px 12px',
+            padding: '13px 13px 11px',
+            // Hanya tampil saat expanded, fade in smooth
             opacity:    expanded ? 1 : 0,
-            transform:  expanded ? 'translateY(0)' : 'translateY(-8px)',
-            transition: 'opacity 0.28s ease 0.15s, transform 0.28s ease 0.15s',
-            // Give the pill height room before expanding
-            marginTop: expanded ? 0 : 36,
+            transform:  expanded ? 'translateY(0)' : 'translateY(-6px)',
+            transition: 'opacity 0.25s ease 0.18s, transform 0.25s ease 0.18s',
             pointerEvents: expanded ? 'auto' : 'none',
+            // Ruang untuk pill saat collapsed
+            minHeight: 36,
           }}>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                 <div style={{
-                  width: 34, height: 34, borderRadius: 11,
-                  background: `${meta.color}22`,
-                  border: `1px solid ${meta.color}38`,
+                  width: 33, height: 33, borderRadius: 10, flexShrink: 0,
+                  background: `${meta.color}20`,
+                  border: `1px solid ${meta.color}35`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0,
                 }}>
-                  <Icon size={17} style={{ color: meta.color }} />
+                  <Icon size={16} style={{ color: meta.color }} />
                 </div>
                 <div>
-                  <div style={{ color: '#fff', fontWeight: 800, fontSize: 13.5, lineHeight: 1.2 }}>
+                  <div style={{ color: '#fff', fontWeight: 800, fontSize: 13, lineHeight: 1.2 }}>
                     {alarm.label}
                   </div>
-                  <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10.5, marginTop: 2, display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <Clock size={9} />
-                    {alarm.time} · {meta.label}
+                  <div style={{
+                    color: 'rgba(255,255,255,0.4)', fontSize: 10.5, marginTop: 2,
+                    display: 'flex', alignItems: 'center', gap: 3,
+                  }}>
+                    <Clock size={9} />{alarm.time} · {meta.label}
                   </div>
                 </div>
               </div>
               <button onClick={dismiss} style={{
                 width: 24, height: 24, borderRadius: '50%',
-                background: 'rgba(255,255,255,0.1)', border: 'none',
+                background: 'rgba(255,255,255,0.09)', border: 'none',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: 'pointer', flexShrink: 0,
               }}>
-                <X size={12} color="rgba(255,255,255,0.65)" />
+                <X size={12} color="rgba(255,255,255,0.6)" />
               </button>
             </div>
 
-            {/* Accent bar */}
+            {/* Accent line */}
             <div style={{
-              height: 2.5, borderRadius: 99, marginBottom: 10,
-              background: `linear-gradient(90deg, ${meta.color}, ${meta.color}33)`,
+              height: 2, borderRadius: 99, marginBottom: 10,
+              background: `linear-gradient(90deg, ${meta.color}, ${meta.color}30)`,
             }} />
 
             {/* Buttons */}
-            <div style={{ display: 'flex', gap: 7 }}>
+            <div style={{ display: 'flex', gap: 6 }}>
               {alarm.snoozeEnabled && (
                 <button onClick={snooze} style={{
-                  flex: 1, padding: '8px 0', borderRadius: 11,
+                  flex: 1, padding: '7px 0', borderRadius: 10,
                   background: 'rgba(255,255,255,0.07)',
                   border: '1px solid rgba(255,255,255,0.10)',
-                  color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
                 }}>
                   Snooze {alarm.snoozeMinutes}m
                 </button>
               )}
               <button onClick={dismiss} style={{
-                flex: 1, padding: '8px 0', borderRadius: 11,
+                flex: 1, padding: '7px 0', borderRadius: 10,
                 background: `linear-gradient(135deg, ${meta.color}, ${meta.color}bb)`,
                 border: 'none', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
               }}>
@@ -270,13 +261,12 @@ export default function DynamicIsland({ alarm, onDismiss, onSnooze }) {
 
           {/* Glow ring */}
           <div style={{
-            position: 'absolute', inset: -1.5,
-            borderRadius: expanded ? 27.5 : 51.5,
+            position: 'absolute', inset: -1, pointerEvents: 'none',
+            borderRadius: expanded ? 27 : 51,
             border: `1.5px solid ${meta.color}`,
-            opacity: 0.25,
+            opacity: 0.22,
             animation: 'di-glow 2.5s ease-in-out infinite',
-            pointerEvents: 'none',
-            transition: 'border-radius 0.42s cubic-bezier(0.34,1.56,0.64,1)',
+            transition: 'border-radius 0.40s cubic-bezier(0.34,1.56,0.64,1)',
           }} />
         </div>
       </div>

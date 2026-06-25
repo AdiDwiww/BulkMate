@@ -105,6 +105,19 @@ export async function scheduleAllNativeReminders(reminders) {
   try {
     const { LocalNotifications } = await import('@capacitor/local-notifications')
 
+    // Buat / pastikan channel tersedia (Android 8+)
+    await LocalNotifications.createChannel({
+      id: 'bulkmate-meals',
+      name: 'Pengingat Makan',
+      description: 'Alarm waktu makan BulkMate',
+      importance: 5,       // IMPORTANCE_HIGH
+      visibility: 1,       // VISIBILITY_PUBLIC
+      sound: 'default',
+      vibration: true,
+      lights: true,
+      lightColor: '#22c55e',
+    })
+
     // Hapus semua notif terjadwal sebelumnya
     const pending = await LocalNotifications.getPending()
     if (pending.notifications.length > 0) {
@@ -119,7 +132,6 @@ export async function scheduleAllNativeReminders(reminders) {
 
       const [hour, minute] = reminder.time.split(':').map(Number)
 
-      // Tentukan hari-hari yang perlu di-schedule
       const days = reminder.days === 'daily'
         ? [0, 1, 2, 3, 4, 5, 6]
         : reminder.days === 'weekdays'
@@ -130,7 +142,6 @@ export async function scheduleAllNativeReminders(reminders) {
         ? reminder.days.map(d => DAYS_SHORT.indexOf(d))
         : [0, 1, 2, 3, 4, 5, 6]
 
-      // Buat notifikasi untuk tiap hari (1 minggu ke depan = 7 hari)
       for (let dayOffset = 0; dayOffset < 8; dayOffset++) {
         const date = new Date()
         date.setDate(date.getDate() + dayOffset)
@@ -139,13 +150,14 @@ export async function scheduleAllNativeReminders(reminders) {
         if (!days.includes(dayOfWeek)) continue
 
         date.setHours(hour, minute, 0, 0)
-        if (date <= new Date()) continue // skip waktu yang sudah lewat
+        if (date <= new Date()) continue
 
         notifications.push({
           id: id++,
-          title: `🍽️ ${reminder.label}`,
-          body: `Waktunya ${reminder.label}! Jangan lupa catat makananmu.`,
+          title: `${reminder.label}`,
+          body: `Waktunya ${reminder.label}! Jangan lupa catat makananmu di BulkMate.`,
           schedule: { at: date, allowWhileIdle: true },
+          channelId: 'bulkmate-meals',
           sound: 'default',
           smallIcon: 'ic_stat_icon_config_sample',
           iconColor: '#22c55e',

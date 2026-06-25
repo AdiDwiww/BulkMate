@@ -419,16 +419,50 @@ export default function MealReminders() {
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState(null)
   const [notifStatus, setNotifStatus] = useState(
-    'Notification' in window ? Notification.permission : 'unsupported'
+    isNative() ? 'checking'
+    : ('Notification' in window ? Notification.permission : 'unsupported')
   )
 
+  // Cek status notifikasi native saat mount
+  useEffect(() => {
+    if (!isNative()) return
+    import('@capacitor/local-notifications')
+      .then(({ LocalNotifications }) =>
+        LocalNotifications.checkPermissions().then(p => {
+          setNotifStatus(p.display === 'granted' ? 'granted' : 'default')
+        })
+      )
+      .catch(() => setNotifStatus('unsupported'))
+  }, [])
+
   const requestPermission = async () => {
-    await registerSW()
-    const perm = await requestNotifPermission()
-    setNotifStatus(perm)
-    // Jika di APK native, langsung jadwalkan semua reminder yang sudah ada
-    if (perm === 'granted' && isNative()) {
-      await scheduleAllNativeReminders(reminders)
+    if (isNative()) {
+      try {
+        const { LocalNotifications } = await import('@capacitor/local-notifications')
+        // Buat channel notifikasi Android
+        await LocalNotifications.createChannel({
+          id: 'bulkmate-meals',
+          name: 'Pengingat Makan',
+          description: 'Alarm waktu makan BulkMate',
+          importance: 5,
+          visibility: 1,
+          sound: 'default',
+          vibration: true,
+          lights: true,
+          lightColor: '#22c55e',
+        })
+        const perm = await LocalNotifications.requestPermissions()
+        const status = perm.display === 'granted' ? 'granted' : 'denied'
+        setNotifStatus(status)
+        if (status === 'granted') await scheduleAllNativeReminders(reminders)
+      } catch (e) {
+        console.warn('Native notif permission failed:', e)
+        setNotifStatus('unsupported')
+      }
+    } else {
+      await registerSW()
+      const perm = await requestNotifPermission()
+      setNotifStatus(perm)
     }
   }
 
@@ -464,13 +498,10 @@ export default function MealReminders() {
       </div>
 
       {/* Notification status banner */}
-      {notifStatus !== 'granted' && (
+      {notifStatus !== 'granted' && notifStatus !== 'checking' && (
         <div style={{
-          borderRadius: 14,
-          padding: '14px 16px',
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 12,
+          borderRadius: 14, padding: '14px 16px',
+          display: 'flex', alignItems: 'flex-start', gap: 12,
           background: notifStatus === 'denied' ? 'rgba(239,68,68,0.07)' : 'rgba(249,115,22,0.07)',
           border: `1px solid ${notifStatus === 'denied' ? 'rgba(239,68,68,0.2)' : 'rgba(249,115,22,0.2)'}`,
         }}>
@@ -479,12 +510,16 @@ export default function MealReminders() {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)', marginBottom: 3 }}>
-              {notifStatus === 'unsupported' ? 'Notifikasi Tidak Didukung' : notifStatus === 'denied' ? 'Izin Notifikasi Ditolak' : 'Aktifkan Notifikasi'}
+              {notifStatus === 'unsupported' ? 'Izinkan Notifikasi' : notifStatus === 'denied' ? 'Izin Notifikasi Ditolak' : 'Aktifkan Notifikasi'}
             </div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: notifStatus === 'denied' || notifStatus === 'unsupported' ? 0 : 10, lineHeight: 1.5 }}>
-              {notifStatus === 'unsupported' ? 'Browser ini tidak mendukung notifikasi. Alarm tetap bunyi saat app terbuka.' : notifStatus === 'denied' ? 'Aktifkan notifikasi secara manual di pengaturan browser / OS.' : 'Izinkan notifikasi agar alarm muncul di layar terkunci.'}
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: notifStatus === 'denied' ? 0 : 10, lineHeight: 1.5 }}>
+              {notifStatus === 'denied'
+                ? 'Aktifkan notifikasi secara manual di Pengaturan Android → Aplikasi → BulkMate.'
+                : isNative()
+                  ? 'Izinkan notifikasi agar alarm muncul walau app ditutup.'
+                  : 'Izinkan notifikasi agar alarm muncul di layar terkunci.'}
             </div>
-            {notifStatus !== 'unsupported' && notifStatus !== 'denied' && (
+            {notifStatus !== 'denied' && (
               <button onClick={requestPermission} className="btn-primary" style={{ fontSize: 12, padding: '7px 16px' }}>
                 Izinkan Notifikasi
               </button>
