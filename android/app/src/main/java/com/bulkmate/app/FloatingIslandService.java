@@ -41,8 +41,11 @@ public class FloatingIslandService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        String action = intent != null ? intent.getAction() : "null";
+        android.util.Log.d("BulkMate-Alarm", "[Service] onStartCommand() - Action: " + action);
+        
         startFg();
-        if (intent != null && "SHOW".equals(intent.getAction())) {
+        if (intent != null && "SHOW".equals(action)) {
             String label = intent.getStringExtra("label");
             String color = intent.getStringExtra("color");
             handler.post(() -> show(
@@ -176,9 +179,15 @@ public class FloatingIslandService extends Service {
                 wm.updateViewLayout(root, lp);
                 
                 bg.setCornerRadius(rad);
-                pill.setAlpha(1f - val);
-                if (val > 0.5f) {
+                
+                // Strictly crossfade to prevent FrameLayout overlap
+                if (val <= 0.5f) {
+                    pill.setVisibility(View.VISIBLE);
+                    pill.setAlpha(1f - (val * 2f));
+                    exp.setAlpha(0f);
+                } else {
                     pill.setVisibility(View.GONE);
+                    exp.setVisibility(View.VISIBLE);
                     exp.setAlpha((val - 0.5f) * 2f);
                 }
             });

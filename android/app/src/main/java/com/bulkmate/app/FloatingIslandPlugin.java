@@ -60,6 +60,7 @@ public class FloatingIslandPlugin extends Plugin {
 
     @PluginMethod
     public void show(PluginCall call) {
+        android.util.Log.d("BulkMate-Alarm", "[Plugin] show called");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(getContext())) {
             JSObject r = new JSObject(); r.put("error", "no_permission"); call.resolve(r); return;
         }
@@ -135,6 +136,7 @@ public class FloatingIslandPlugin extends Plugin {
     }
 
     private void scheduleOne(AlarmManager am, int id, long at, String label, String color) {
+        android.util.Log.d("BulkMate-Alarm", "[AlarmManager] scheduled reminder: " + label + " id: " + id);
         Intent intent = new Intent(getContext(), FloatingIslandReceiver.class);
         intent.setAction("SHOW_FI");
         intent.putExtra("label", label);

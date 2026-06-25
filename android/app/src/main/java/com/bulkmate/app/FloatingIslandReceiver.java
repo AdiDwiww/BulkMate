@@ -40,10 +40,9 @@ public class FloatingIslandReceiver extends BroadcastReceiver {
             wakeLock.acquire(10_000L); // 10 seconds max
         }
 
-        // Show overlay directly (reliable, no service needed)
-        H.post(() -> showOverlay(context, label != null ? label : "Pengingat", color != null ? color : "#22c55e"));
+        android.util.Log.d("BulkMate-Alarm", "[BroadcastReceiver] received reminder: " + label);
 
-        // Also try to start ForegroundService as backup
+        // Try to start ForegroundService (this is the single source of truth for the overlay)
         try {
             Intent svc = new Intent(context, FloatingIslandService.class);
             svc.setAction("SHOW");
@@ -53,63 +52,13 @@ public class FloatingIslandReceiver extends BroadcastReceiver {
                 context.startForegroundService(svc);
             else
                 context.startService(svc);
-        } catch (Exception ignored) {}
-    }
-
-    static void showOverlay(Context ctx, String label, String colorHex) {
-        if (!android.provider.Settings.canDrawOverlays(ctx)) return;
-        removeOverlay(ctx);
-
-        int accent;
-        try { accent = Color.parseColor(colorHex); }
-        catch (Exception e) { accent = Color.parseColor("#22c55e"); }
-
-        android.content.SharedPreferences prefs = ctx.getSharedPreferences("FloatingIslandPrefs", Context.MODE_PRIVATE);
-        int camX = prefs.getInt("camX", 0);
-        int camY = prefs.getInt("camY", 6);
-
-        LinearLayout pill = buildPill(ctx, label, accent, camX);
-        pill.setOnClickListener(v -> removeOverlay(ctx));
-        shownView = pill;
-
-        int wmType = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-            ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-            : WindowManager.LayoutParams.TYPE_PHONE;
-
-        WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            wmType,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-            PixelFormat.TRANSLUCENT
-        );
-        // Position pill exactly in the center
-        WindowManager wm = (WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE);
-        lp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-        lp.x = camX;
-        lp.y = camY;
-
-        try { wm.addView(shownView, lp); } catch (Exception e) { return; }
-
-        shownView.setScaleX(0.7f); shownView.setScaleY(0.7f); shownView.setAlpha(0f);
-        shownView.animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(350).start();
-
-        if (removeTask != null) H.removeCallbacks(removeTask);
-        removeTask = () -> removeOverlay(ctx);
-        H.postDelayed(removeTask, 8000);
-    }
-
-    private static void removeOverlay(Context ctx) {
-        if (shownView != null) {
-            try {
-                ((WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE)).removeView(shownView);
-            } catch (Exception ignored) {}
-            shownView = null;
+        } catch (Exception e) {
+            android.util.Log.e("BulkMate-Alarm", "[BroadcastReceiver] Error starting service: " + e.getMessage());
         }
-        if (wakeLock != null && wakeLock.isHeld()) { wakeLock.release(); wakeLock = null; }
     }
+
+    // `buildPill` is used by FloatingIslandService
+    // `buildPill` creates the small state
 
     /**
      * Builds the pill view — matches in-app DynamicIsland design.
