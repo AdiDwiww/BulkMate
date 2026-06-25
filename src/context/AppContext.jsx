@@ -71,18 +71,37 @@ function seedDemoData() {
 
 seedDemoData()
 
+// Safe JSON parse — jika localStorage corrupt, reset ke fallback tanpa crash
+function safeJsonParse(key, fallback) {
+  try {
+    const val = localStorage.getItem(key)
+    if (!val || val === 'undefined' || val === 'null' && fallback !== null) return fallback
+    const parsed = JSON.parse(val)
+    // Validasi tipe: array harus array, object harus object
+    if (Array.isArray(fallback) && !Array.isArray(parsed)) {
+      localStorage.removeItem(key)
+      return fallback
+    }
+    return parsed
+  } catch {
+    console.warn(`[BulkMate] localStorage "${key}" corrupt, reset ke default.`)
+    localStorage.removeItem(key)
+    return fallback
+  }
+}
+
 const initialState = {
   theme: localStorage.getItem('theme') || 'light',
-  user: JSON.parse(localStorage.getItem('bulkmate_user') || 'null'),
-  profile: JSON.parse(localStorage.getItem('bulkmate_profile') || 'null'),
-  dailyLogs: JSON.parse(localStorage.getItem('bulkmate_logs') || '[]'),
-  weightLogs: JSON.parse(localStorage.getItem('bulkmate_weights') || '[]'),
-  favoriteFoods: JSON.parse(localStorage.getItem('bulkmate_favorites') || '[]'),
-  expenses: JSON.parse(localStorage.getItem('bulkmate_expenses') || '[]'),
-  reminders: JSON.parse(localStorage.getItem('bulkmate_reminders') || '[]'),
-  progressPhotos: JSON.parse(localStorage.getItem('bulkmate_photos') || '[]'),
-  nutritionTarget: JSON.parse(localStorage.getItem('bulkmate_target') || 'null'),
-  mealPlans: JSON.parse(localStorage.getItem('bulkmate_mealplans') || '[]'),
+  user: safeJsonParse('bulkmate_user', null),
+  profile: safeJsonParse('bulkmate_profile', null),
+  dailyLogs: safeJsonParse('bulkmate_logs', []),
+  weightLogs: safeJsonParse('bulkmate_weights', []),
+  favoriteFoods: safeJsonParse('bulkmate_favorites', []),
+  expenses: safeJsonParse('bulkmate_expenses', []),
+  reminders: safeJsonParse('bulkmate_reminders', []),
+  progressPhotos: safeJsonParse('bulkmate_photos', []),
+  nutritionTarget: safeJsonParse('bulkmate_target', null),
+  mealPlans: safeJsonParse('bulkmate_mealplans', []),
   currentDate: new Date().toISOString().split('T')[0],
 }
 
