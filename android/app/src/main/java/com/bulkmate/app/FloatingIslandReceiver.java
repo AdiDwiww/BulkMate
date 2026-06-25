@@ -85,13 +85,10 @@ public class FloatingIslandReceiver extends BroadcastReceiver {
                 | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
         );
-        // Position pill to the RIGHT of the camera dot center
+        // Position pill exactly in the center
         WindowManager wm = (WindowManager) ctx.getSystemService(Context.WINDOW_SERVICE);
-        int d = (int) ctx.getResources().getDisplayMetrics().density;
-        int screenW = getScreenWidth(ctx, wm);
-        // Camera center = screenW/2 + camX. Start pill 8dp after camera right edge (camera radius ~7dp)
-        lp.gravity = Gravity.TOP | Gravity.START;
-        lp.x = screenW / 2 + camX + (7 * d) + (4 * d); // right of camera dot
+        lp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+        lp.x = camX;
         lp.y = camY;
 
         try { wm.addView(shownView, lp); } catch (Exception e) { return; }

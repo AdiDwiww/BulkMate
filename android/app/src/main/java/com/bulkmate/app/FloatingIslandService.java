@@ -64,39 +64,117 @@ public class FloatingIslandService extends Service {
         try { accent = Color.parseColor(colorHex); }
         catch (Exception e) { accent = Color.parseColor("#22c55e"); }
 
-        // Pill built by receiver (shared builder)
-        LinearLayout pill = FloatingIslandReceiver.buildPill(this, label, accent, camX);
-        pill.setOnClickListener(v -> dismissStop());
-        overlay = pill;
+        final int d = (int) getResources().getDisplayMetrics().density;
 
+        // Container
+        final android.widget.FrameLayout root = new android.widget.FrameLayout(this);
         int wmType = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-            ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-            : WindowManager.LayoutParams.TYPE_PHONE;
-
-        // Position pill to the RIGHT of camera dot
-        int d = (int) getResources().getDisplayMetrics().density;
-        int screenW;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            screenW = wm.getCurrentWindowMetrics().getBounds().width();
-        } else {
-            DisplayMetrics dm = new DisplayMetrics();
-            wm.getDefaultDisplay().getMetrics(dm);
-            screenW = dm.widthPixels;
-        }
-
+            ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE;
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            wmType,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, wmType,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
         );
-        lp.gravity = Gravity.TOP | Gravity.START;
-        lp.x = screenW / 2 + camX + (7 * d) + (4 * d); // right of camera dot
-        lp.y = camY;
+        lp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+        lp.x = camX; lp.y = camY;
 
+        // Animated Background
+        GradientDrawable bg = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR, new int[]{Color.parseColor("#0f0f0f"), Color.parseColor("#1e1e1e")}
+        );
+        bg.setShape(GradientDrawable.RECTANGLE);
+        bg.setCornerRadius(50 * d);
+        bg.setStroke(1, Color.argb(26, 255, 255, 255));
+        root.setBackground(bg);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) root.setElevation(10 * d);
+
+        // Pill layout (State 1)
+        LinearLayout pill = FloatingIslandReceiver.buildPill(this, label, accent, camX);
+        pill.setLayoutParams(new android.widget.FrameLayout.LayoutParams(148 * d, 36 * d, Gravity.CENTER));
+
+        // Expanded layout (State 2)
+        LinearLayout exp = new LinearLayout(this);
+        exp.setOrientation(LinearLayout.VERTICAL);
+        exp.setLayoutParams(new android.widget.FrameLayout.LayoutParams(300 * d, 122 * d));
+        exp.setPadding(13 * d, 12 * d, 13 * d, 11 * d);
+        exp.setAlpha(0f);
+        exp.setVisibility(View.GONE);
+
+        // Header
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        View iconBox = new View(this);
+        iconBox.setLayoutParams(new LinearLayout.LayoutParams(32 * d, 32 * d));
+        GradientDrawable ibg = new GradientDrawable(); ibg.setColor(Color.argb(32, Color.red(accent), Color.green(accent), Color.blue(accent)));
+        ibg.setCornerRadius(10 * d); ibg.setStroke(1, Color.argb(55, Color.red(accent), Color.green(accent), Color.blue(accent)));
+        iconBox.setBackground(ibg);
+        
+        LinearLayout texts = new LinearLayout(this);
+        texts.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+        tlp.setMargins(9 * d, 0, 0, 0);
+        texts.setLayoutParams(tlp);
+        android.widget.TextView tLabel = new android.widget.TextView(this);
+        tLabel.setText(label); tLabel.setTextColor(Color.WHITE); tLabel.setTextSize(13f); tLabel.setTypeface(null, android.graphics.Typeface.BOLD);
+        android.widget.TextView tTime = new android.widget.TextView(this);
+        tTime.setText("Sekarang"); tTime.setTextColor(Color.argb(102, 255, 255, 255)); tTime.setTextSize(10.5f);
+        texts.addView(tLabel); texts.addView(tTime);
+        header.addView(iconBox); header.addView(texts);
+
+        // Accent Line
+        View line = new View(this);
+        LinearLayout.LayoutParams lineLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 2 * d);
+        lineLp.setMargins(0, 8 * d, 0, 9 * d);
+        line.setLayoutParams(lineLp);
+        line.setBackgroundColor(accent);
+
+        // Buttons
+        LinearLayout btnRow = new LinearLayout(this);
+        btnRow.setOrientation(LinearLayout.HORIZONTAL);
+        android.widget.Button btnOk = new android.widget.Button(this);
+        btnOk.setText("Siap Makan"); btnOk.setTextColor(Color.WHITE); btnOk.setTextSize(12f);
+        btnOk.setBackgroundColor(accent);
+        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 34 * d);
+        btnOk.setLayoutParams(blp);
+        btnOk.setOnClickListener(v -> dismissStop());
+        btnRow.addView(btnOk);
+
+        exp.addView(header); exp.addView(line); exp.addView(btnRow);
+
+        root.addView(exp);
+        root.addView(pill);
+
+        // Animation logic
+        root.setOnClickListener(v -> {
+            if (exp.getVisibility() == View.VISIBLE) return;
+            if (autoHide != null) handler.removeCallbacks(autoHide);
+            exp.setVisibility(View.VISIBLE);
+            
+            android.animation.ValueAnimator anim = android.animation.ValueAnimator.ofFloat(0f, 1f);
+            anim.setDuration(400); anim.setInterpolator(new OvershootInterpolator(1.2f));
+            anim.addUpdateListener(a -> {
+                float val = (float) a.getAnimatedValue();
+                int w = (int) (148 * d + (300 * d - 148 * d) * val);
+                int h = (int) (36 * d + (122 * d - 36 * d) * val);
+                float rad = 50 * d + (26 * d - 50 * d) * val;
+                
+                lp.width = w; lp.height = h;
+                wm.updateViewLayout(root, lp);
+                
+                bg.setCornerRadius(rad);
+                pill.setAlpha(1f - val);
+                if (val > 0.5f) {
+                    pill.setVisibility(View.GONE);
+                    exp.setAlpha((val - 0.5f) * 2f);
+                }
+            });
+            anim.start();
+            lp.flags &= ~WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE; // allow touch on buttons
+            wm.updateViewLayout(root, lp);
+        });
+
+        overlay = root;
         try { wm.addView(overlay, lp); } catch (Exception e) { stopSelf(); return; }
 
         overlay.setScaleX(0.65f); overlay.setScaleY(0.65f); overlay.setAlpha(0f);

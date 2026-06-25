@@ -137,10 +137,12 @@ public class FloatingIslandPlugin extends Plugin {
         PendingIntent pi = PendingIntent.getBroadcast(getContext(), id, intent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi);
-            else
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                AlarmManager.AlarmClockInfo info = new AlarmManager.AlarmClockInfo(at, pi);
+                am.setAlarmClock(info, pi);
+            } else {
                 am.setExact(AlarmManager.RTC_WAKEUP, at, pi);
+            }
         } catch (Exception e) { am.set(AlarmManager.RTC_WAKEUP, at, pi); }
     }
 
