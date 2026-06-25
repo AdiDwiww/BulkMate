@@ -84,19 +84,19 @@ public class FloatingIslandService extends Service {
             PixelFormat.TRANSLUCENT
         );
         
-        // BUG 1 & 5: Default to 0 so it merges with the top bezel on non-cutout devices (no floating gap)
+        // Restore manual offset so user can fine-tune if auto-detection misses the mark
         lp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
         lp.x = 0; 
-        lp.y = 0; // Set as high as possible
+        lp.y = (camY * d); // Base fallback is just the manual user offset
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             root.setOnApplyWindowInsetsListener((v, insets) -> {
                 android.view.DisplayCutout cutout = insets.getDisplayCutout();
                 if (cutout != null && cutout.getBoundingRects().size() > 0) {
                     android.graphics.Rect r = cutout.getBoundingRects().get(0);
-                    // Place exactly at punch-hole (merge with status bar area)
+                    // Place exactly at punch-hole, plus any manual user offset
                     WindowManager.LayoutParams l = (WindowManager.LayoutParams) root.getLayoutParams();
-                    int desiredY = Math.max(0, r.top);
+                    int desiredY = Math.max(0, r.top) + (camY * d);
                     if (l.y != desiredY) {
                         l.y = desiredY;
                         try { ((WindowManager) getSystemService(WINDOW_SERVICE)).updateViewLayout(root, l); } catch (Exception ignored){}
