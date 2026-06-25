@@ -8,7 +8,8 @@ import {
 } from 'lucide-react'
 import {
   formatDays, ALL_DAYS, DAY_LABELS,
-  playAlarmSound, requestNotifPermission, registerSW
+  playAlarmSound, requestNotifPermission, registerSW,
+  scheduleAllNativeReminders, isNative,
 } from '../utils/alarmEngine'
 
 const MEAL_TYPES = [
@@ -425,21 +426,31 @@ export default function MealReminders() {
     await registerSW()
     const perm = await requestNotifPermission()
     setNotifStatus(perm)
+    // Jika di APK native, langsung jadwalkan semua reminder yang sudah ada
+    if (perm === 'granted' && isNative()) {
+      await scheduleAllNativeReminders(reminders)
+    }
   }
 
-  const save = data => {
+  const save = async data => {
     const next = reminders.find(r => r.id === data.id)
       ? reminders.map(r => r.id === data.id ? data : r)
       : [...reminders, data]
     dispatch({ type: 'SET_REMINDERS', payload: next })
+    // Jadwalkan native background notifications (Capacitor)
+    if (isNative()) await scheduleAllNativeReminders(next)
   }
 
-  const remove = id => {
-    dispatch({ type: 'SET_REMINDERS', payload: reminders.filter(r => r.id !== id) })
+  const remove = async id => {
+    const next = reminders.filter(r => r.id !== id)
+    dispatch({ type: 'SET_REMINDERS', payload: next })
+    if (isNative()) await scheduleAllNativeReminders(next)
   }
 
-  const toggle = id => {
-    dispatch({ type: 'SET_REMINDERS', payload: reminders.map(r => r.id === id ? { ...r, enabled: !r.enabled } : r) })
+  const toggle = async id => {
+    const next = reminders.map(r => r.id === id ? { ...r, enabled: !r.enabled } : r)
+    dispatch({ type: 'SET_REMINDERS', payload: next })
+    if (isNative()) await scheduleAllNativeReminders(next)
   }
 
   const openAdd  = () => { setEditing(null); setShowModal(true) }
@@ -588,7 +599,9 @@ export default function MealReminders() {
       <div style={{ borderRadius: 12, padding: '12px 14px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', display: 'flex', gap: 10 }}>
         <Info size={14} style={{ color: 'var(--text-muted)', flexShrink: 0, marginTop: 1 }} />
         <span style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-          Alarm bunyi saat app terbuka. Di Android, izinkan notifikasi untuk alarm di background. Di iOS, tambahkan ke Home Screen terlebih dahulu.
+          {isNative()
+            ? 'Alarm dijadwalkan secara native — bunyi otomatis walau app ditutup. Pastikan baterai tidak dioptimasi untuk BulkMate di Pengaturan Android.'
+            : 'Alarm bunyi saat app terbuka. Di Android APK, alarm muncul otomatis walau app ditutup.'}
         </span>
       </div>
 

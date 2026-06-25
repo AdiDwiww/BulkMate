@@ -7,7 +7,6 @@ export function playAlarmSound(type = 'bell', repeatCount = 3) {
       const t = ctx.currentTime + i * 0.65
 
       if (type === 'bell') {
-        // Bell: sine + decay
         const osc = ctx.createOscillator()
         const gain = ctx.createGain()
         osc.connect(gain); gain.connect(ctx.destination)
@@ -19,7 +18,6 @@ export function playAlarmSound(type = 'bell', repeatCount = 3) {
         osc.start(t); osc.stop(t + 0.6)
 
       } else if (type === 'chime') {
-        // Chime: 3 ascending notes
         const notes = [523, 659, 784]
         notes.forEach((freq, j) => {
           const osc = ctx.createOscillator()
@@ -34,7 +32,6 @@ export function playAlarmSound(type = 'bell', repeatCount = 3) {
         })
 
       } else if (type === 'beep') {
-        // Short digital beep
         const osc = ctx.createOscillator()
         const gain = ctx.createGain()
         osc.connect(gain); gain.connect(ctx.destination)
@@ -45,7 +42,6 @@ export function playAlarmSound(type = 'bell', repeatCount = 3) {
         gain.gain.setValueAtTime(0, t + 0.12)
         osc.start(t); osc.stop(t + 0.15)
       }
-      // 'none': no sound
     }
     return ctx
   } catch {
@@ -55,7 +51,6 @@ export function playAlarmSound(type = 'bell', repeatCount = 3) {
 
 const DAYS_SHORT = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
 
-// Cek apakah alarm harus bunyi sekarang
 export function shouldFireNow(reminder) {
   const now = new Date()
   const [h, m] = reminder.time.split(':').map(Number)
@@ -69,7 +64,6 @@ export function shouldFireNow(reminder) {
   return false
 }
 
-// Format nama hari
 export const DAY_LABELS = { sun:'Min', mon:'Sen', tue:'Sel', wed:'Rab', thu:'Kam', fri:'Jum', sat:'Sab' }
 export const ALL_DAYS = ['mon','tue','wed','thu','fri','sat','sun']
 
@@ -81,7 +75,97 @@ export function formatDays(days) {
   return '-'
 }
 
-// Kirim notifikasi ke Service Worker (background)
+// ─── Deteksi apakah running di dalam Capacitor native app ───────────────────
+export function isNative() {
+  return typeof window !== 'undefined' && !!(window.Capacitor?.isNativePlatform?.())
+}
+
+// ─── Minta izin notifikasi (native Capacitor atau web browser) ──────────────
+export async function requestNotifPermission() {
+  // Native Capacitor: minta izin via plugin
+  if (isNative()) {
+    try {
+      const { LocalNotifications } = await import('@capacitor/local-notifications')
+      const perm = await LocalNotifications.requestPermissions()
+      return perm.display === 'granted' ? 'granted' : 'denied'
+    } catch {
+      return 'unsupported'
+    }
+  }
+  // Web browser fallback
+  if (!('Notification' in window)) return 'unsupported'
+  if (Notification.permission === 'granted') return 'granted'
+  return await Notification.requestPermission()
+}
+
+// ─── Schedule semua reminder ke Capacitor Local Notifications (native) ──────
+// Ini yang membuat notifikasi muncul WALAU APP DITUTUP
+export async function scheduleAllNativeReminders(reminders) {
+  if (!isNative()) return false
+  try {
+    const { LocalNotifications } = await import('@capacitor/local-notifications')
+
+    // Hapus semua notif terjadwal sebelumnya
+    const pending = await LocalNotifications.getPending()
+    if (pending.notifications.length > 0) {
+      await LocalNotifications.cancel({ notifications: pending.notifications })
+    }
+
+    const notifications = []
+    let id = 1
+
+    for (const reminder of reminders) {
+      if (!reminder.enabled) continue
+
+      const [hour, minute] = reminder.time.split(':').map(Number)
+
+      // Tentukan hari-hari yang perlu di-schedule
+      const days = reminder.days === 'daily'
+        ? [0, 1, 2, 3, 4, 5, 6]
+        : reminder.days === 'weekdays'
+        ? [1, 2, 3, 4, 5]
+        : reminder.days === 'weekends'
+        ? [0, 6]
+        : Array.isArray(reminder.days)
+        ? reminder.days.map(d => DAYS_SHORT.indexOf(d))
+        : [0, 1, 2, 3, 4, 5, 6]
+
+      // Buat notifikasi untuk tiap hari (1 minggu ke depan = 7 hari)
+      for (let dayOffset = 0; dayOffset < 8; dayOffset++) {
+        const date = new Date()
+        date.setDate(date.getDate() + dayOffset)
+        const dayOfWeek = date.getDay()
+
+        if (!days.includes(dayOfWeek)) continue
+
+        date.setHours(hour, minute, 0, 0)
+        if (date <= new Date()) continue // skip waktu yang sudah lewat
+
+        notifications.push({
+          id: id++,
+          title: `🍽️ ${reminder.label}`,
+          body: `Waktunya ${reminder.label}! Jangan lupa catat makananmu.`,
+          schedule: { at: date, allowWhileIdle: true },
+          sound: 'default',
+          smallIcon: 'ic_stat_icon_config_sample',
+          iconColor: '#22c55e',
+          extra: { reminderId: reminder.id, mealType: reminder.mealType },
+        })
+      }
+    }
+
+    if (notifications.length > 0) {
+      await LocalNotifications.schedule({ notifications })
+    }
+
+    return true
+  } catch (e) {
+    console.warn('Capacitor LocalNotifications failed:', e)
+    return false
+  }
+}
+
+// ─── Kirim notifikasi via Service Worker (web browser fallback) ─────────────
 export function swNotify(title, body, tag, snoozeMinutes = 5) {
   if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
     navigator.serviceWorker.controller.postMessage({
@@ -91,15 +175,9 @@ export function swNotify(title, body, tag, snoozeMinutes = 5) {
   }
 }
 
-// Minta izin notifikasi
-export async function requestNotifPermission() {
-  if (!('Notification' in window)) return 'unsupported'
-  if (Notification.permission === 'granted') return 'granted'
-  return await Notification.requestPermission()
-}
-
-// Register service worker
+// ─── Register Service Worker (web fallback) ──────────────────────────────────
 export async function registerSW() {
+  if (isNative()) return // Capacitor tidak butuh SW
   if (!('serviceWorker' in navigator)) return
   try {
     await navigator.serviceWorker.register('/sw.js')

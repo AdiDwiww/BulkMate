@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">BulkMate</string>
+    <string name="title_activity_main">BulkMate</string>
+    <string name="package_name">com.bulkmate.app</string>
+    <string name="custom_url_scheme">com.bulkmate.app</string>
+</resources>
