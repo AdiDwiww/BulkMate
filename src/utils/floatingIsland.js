@@ -28,8 +28,28 @@ export async function checkOverlayPermission() {
 /** Open Android Settings to grant overlay permission */
 export async function requestOverlayPermission() {
   const p = await getPlugin()
-  if (!p) return
-  try { await p.requestPermission() } catch {}
+  if (p) {
+    try {
+      const result = await p.requestPermission()
+      // If plugin couldn't open settings, show manual instructions
+      if (result?.error) {
+        showManualInstructions()
+      }
+      return
+    } catch (e) {
+      console.warn('FloatingIsland.requestPermission error:', e)
+    }
+  }
+  // Fallback: manual instructions
+  showManualInstructions()
+}
+
+function showManualInstructions() {
+  alert(
+    'Buka manual:\n' +
+    'Pengaturan → Aplikasi → BulkMate → ' +
+    'Tampilkan di atas app lain → Aktifkan'
+  )
 }
 
 /** Save camera position to SharedPreferences (for use when app is closed) */
