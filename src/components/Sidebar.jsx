@@ -1,27 +1,17 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 import {
-  LayoutDashboard, Calculator, UtensilsCrossed, Heart, ShoppingBag,
-  Scale, Bell, Target, Wallet, Wand2, Camera, Image, Brain,
-  BarChart3, Settings, ChevronLeft, ChevronRight, Zap, X, Sun, Moon
+  LayoutDashboard, UtensilsCrossed, Scale, Wand2, Camera,
+  Settings, ChevronLeft, ChevronRight, Zap, X, Sun, Moon
 } from 'lucide-react'
 
 const navItems = [
-  { id: 'dashboard',        label: 'Dashboard',         icon: LayoutDashboard },
-  { id: 'calculator',       label: 'Kalkulator Kalori', icon: Calculator },
-  { id: 'food-tracker',     label: 'Food Tracker',      icon: UtensilsCrossed },
-  { id: 'favorites',        label: 'Makanan Favorit',   icon: Heart },
-  { id: 'snack-tracker',    label: 'Tracker Jajan',     icon: ShoppingBag },
-  { id: 'weight-tracker',   label: 'Berat Badan',       icon: Scale },
-  { id: 'reminders',        label: 'Pengingat Makan',   icon: Bell },
-  { id: 'predictor',        label: 'Prediksi Target',   icon: Target },
-  { id: 'budget',           label: 'Budget Tracker',    icon: Wallet },
-  { id: 'ai-planner',       label: 'AI Meal Planner',   icon: Wand2 },
-  { id: 'ai-scanner',       label: 'AI Food Scanner',   icon: Camera },
-  { id: 'progress-photo',   label: 'Progress Photo',    icon: Image },
-  { id: 'nutrition-warning',label: 'Nutrition Warning', icon: Brain },
-  { id: 'analytics',        label: 'Analytics',         icon: BarChart3 },
-  { id: 'settings',         label: 'Pengaturan',        icon: Settings },
+  { id: 'dashboard',    label: 'Dashboard',       icon: LayoutDashboard },
+  { id: 'food-tracker', label: 'Food Tracker',    icon: UtensilsCrossed },
+  { id: 'ai-scanner',   label: 'AI Food Scanner', icon: Camera },
+  { id: 'weight-tracker',label: 'Berat Badan',   icon: Scale },
+  { id: 'ai-planner',   label: 'AI Meal Planner', icon: Wand2 },
+  { id: 'settings',     label: 'Pengaturan',      icon: Settings },
 ]
 
 export default function Sidebar({ activePage, onPageChange, mobileOpen, setMobileOpen }) {

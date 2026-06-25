@@ -1,14 +1,14 @@
-import { LayoutDashboard, UtensilsCrossed, Camera, Scale, MoreHorizontal, Wand2 } from 'lucide-react'
+import { LayoutDashboard, UtensilsCrossed, Camera, Scale, Wand2 } from 'lucide-react'
 
 const mobileNavItems = [
-  { id: 'dashboard',      label: 'Beranda',  icon: LayoutDashboard },
-  { id: 'food-tracker',   label: 'Makan',    icon: UtensilsCrossed },
-  { id: 'ai-scanner',     label: 'Scan',     icon: Camera },
-  { id: 'ai-planner',     label: 'AI Plan',  icon: Wand2 },
-  { id: 'weight-tracker', label: 'Berat',    icon: Scale },
+  { id: 'dashboard',      label: 'Beranda', icon: LayoutDashboard },
+  { id: 'food-tracker',   label: 'Makan',   icon: UtensilsCrossed },
+  { id: 'ai-scanner',     label: 'Scan AI', icon: Camera },
+  { id: 'ai-planner',     label: 'AI Plan', icon: Wand2 },
+  { id: 'weight-tracker', label: 'Berat',   icon: Scale },
 ]
 
-export default function MobileNav({ activePage, onPageChange, onMenuOpen }) {
+export default function MobileNav({ activePage, onPageChange }) {
   return (
     <nav
       className="md:hidden fixed bottom-0 left-0 right-0 z-50"
@@ -72,20 +72,6 @@ export default function MobileNav({ activePage, onPageChange, onMenuOpen }) {
             </button>
           )
         })}
-
-        {/* More button */}
-        <button
-          onClick={onMenuOpen}
-          className="flex flex-col items-center gap-1 min-w-0 flex-1"
-          style={{ paddingTop: '6px', paddingBottom: '2px' }}
-        >
-          <div className="w-11 h-7 flex items-center justify-center rounded-2xl">
-            <MoreHorizontal size={20} strokeWidth={1.8} style={{ color: 'var(--text-muted)' }} />
-          </div>
-          <span style={{ fontSize: '9.5px', fontWeight: 500, color: 'var(--text-muted)', whiteSpace: 'nowrap', lineHeight: 1 }}>
-            Lainnya
-          </span>
-        </button>
       </div>
     </nav>
   )

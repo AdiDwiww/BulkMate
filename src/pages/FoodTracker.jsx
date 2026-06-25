@@ -1,18 +1,84 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { FOOD_DATABASE, MEAL_TYPES, calculateTotals, formatDate } from '../utils/helpers'
-import { Plus, Trash2, Search, X, Clock, Flame, Sunrise, Sun, Moon, Cookie } from 'lucide-react'
+import { FOOD_DATABASE, MEAL_TYPES, calculateTotals } from '../utils/helpers'
+import { Plus, Trash2, Search, X, Sunrise, Sun, Moon, Cookie, Loader2, Zap, Sparkles, AlertTriangle } from 'lucide-react'
 
 const MEAL_ICON_MAP = { Sunrise, Sun, Moon, Cookie }
+
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY
+
+const AI_NUTRITION_PROMPT = (name) => `Kamu adalah ahli nutrisi Indonesia. Berikan estimasi kandungan gizi untuk makanan berikut: "${name}".
+
+Berikan respons HANYA dalam format JSON berikut (tanpa teks lain):
+{
+  "name": "<nama makanan yang sudah diperbaiki ejaannya>",
+  "grams": <estimasi porsi umum dalam gram>,
+  "calories": <estimasi kalori total>,
+  "protein": <estimasi protein dalam gram>,
+  "carbs": <estimasi karbohidrat dalam gram>,
+  "fat": <estimasi lemak dalam gram>
+}
+
+Gunakan pengetahuan tentang makanan Indonesia. Berikan estimasi realistis untuk 1 porsi standar.`
+
+async function lookupNutritionWithGroq(name) {
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: AI_NUTRITION_PROMPT(name) }],
+      temperature: 0.2, max_tokens: 256,
+    }),
+  })
+  if (!res.ok) throw new Error('Groq error')
+  const data = await res.json()
+  const text = data.choices?.[0]?.message?.content || ''
+  const match = text.match(/\{[\s\S]*\}/)
+  if (!match) throw new Error('Format tidak valid')
+  return JSON.parse(match[0])
+}
+
+async function lookupNutritionWithGemini(name) {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: AI_NUTRITION_PROMPT(name) }] }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 256 }
+      })
+    }
+  )
+  if (!res.ok) throw new Error('Gemini error')
+  const data = await res.json()
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+  const match = text.match(/\{[\s\S]*\}/)
+  if (!match) throw new Error('Format tidak valid')
+  return JSON.parse(match[0])
+}
+
+async function lookupNutritionAI(name) {
+  if (GROQ_API_KEY) {
+    try { return await lookupNutritionWithGroq(name) } catch (e) { console.warn('Groq fallback:', e.message) }
+  }
+  if (GEMINI_API_KEY) return await lookupNutritionWithGemini(name)
+  throw new Error('NO_KEY')
+}
 
 function AddFoodModal({ onClose, onAdd, date, mealType }) {
   const [mode, setMode] = useState('search') // 'search' | 'manual'
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedFood, setSelectedFood] = useState(null)
   const [grams, setGrams] = useState(100)
-  const [manualForm, setManualForm] = useState({
-    name: '', grams: 100, calories: 0, protein: 0, carbs: 0, fat: 0
-  })
+
+  // Manual AI state
+  const [manualName, setManualName] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiResult, setAiResult] = useState(null)
+  const [aiError, setAiError] = useState(null)
 
   const filteredFoods = FOOD_DATABASE.filter(f =>
     f.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -28,26 +94,33 @@ function AddFoodModal({ onClose, onAdd, date, mealType }) {
   const handleAddFromDB = () => {
     if (!selectedFood) return
     const nutrition = calcNutrition(selectedFood, grams)
-    onAdd({
-      name: selectedFood.name,
-      grams,
-      meal_type: mealType,
-      date,
-      ...nutrition
-    })
+    onAdd({ name: selectedFood.name, grams, meal_type: mealType, date, ...nutrition })
     onClose()
   }
 
-  const handleAddManual = () => {
-    onAdd({
-      ...manualForm,
-      meal_type: mealType,
-      date,
-    })
+  const handleAILookup = async () => {
+    if (!manualName.trim()) return
+    setAiLoading(true)
+    setAiResult(null)
+    setAiError(null)
+    try {
+      const result = await lookupNutritionAI(manualName.trim())
+      setAiResult(result)
+    } catch {
+      setAiError('Gagal menganalisis. Cek koneksi atau API key.')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  const handleAddAIResult = () => {
+    if (!aiResult) return
+    onAdd({ ...aiResult, meal_type: mealType, date })
     onClose()
   }
 
   const nutrition = selectedFood ? calcNutrition(selectedFood, grams) : null
+  const hasApiKey = Boolean(GROQ_API_KEY || GEMINI_API_KEY)
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -63,12 +136,12 @@ function AddFoodModal({ onClose, onAdd, date, mealType }) {
         <div className="p-5 space-y-4">
           {/* Mode tabs */}
           <div className="tab-nav">
-              <button className={`tab-btn ${mode === 'search' ? 'active' : ''}`} onClick={() => setMode('search')}>
-                Cari Database
-              </button>
-              <button className={`tab-btn ${mode === 'manual' ? 'active' : ''}`} onClick={() => setMode('manual')}>
-                Input Manual
-              </button>
+            <button className={`tab-btn ${mode === 'search' ? 'active' : ''}`} onClick={() => setMode('search')}>
+              Cari Database
+            </button>
+            <button className={`tab-btn ${mode === 'manual' ? 'active' : ''}`} onClick={() => setMode('manual')}>
+              Input AI
+            </button>
           </div>
 
           {mode === 'search' ? (
@@ -88,14 +161,10 @@ function AddFoodModal({ onClose, onAdd, date, mealType }) {
               {!selectedFood && (
                 <div className="max-h-48 overflow-y-auto scrollbar-thin space-y-1">
                   {filteredFoods.slice(0, 20).map(food => (
-                    <button
-                      key={food.name}
+                    <button key={food.name}
                       onClick={() => { setSelectedFood(food); setSearchQuery(food.name) }}
                       className="w-full text-left px-3 py-2.5 rounded-xl transition-colors"
-                      style={{ background: 'var(--bg-secondary)' }}
-                      onMouseEnter={e => e.target.style.background = 'var(--bg-card-hover)'}
-                      onMouseLeave={e => e.target.style.background = 'var(--bg-secondary)'}
-                    >
+                      style={{ background: 'var(--bg-secondary)' }}>
                       <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{food.name}</div>
                       <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
                         per 100g: {food.per100g.calories} kcal | P:{food.per100g.protein}g | K:{food.per100g.carbs}g | L:{food.per100g.fat}g
@@ -109,27 +178,21 @@ function AddFoodModal({ onClose, onAdd, date, mealType }) {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <label className="label text-xs mb-0 flex-shrink-0">Porsi (gram)</label>
-                    <input
-                      type="number"
-                      className="input-field"
-                      value={grams}
-                      onChange={e => setGrams(Number(e.target.value))}
-                      min={1} max={2000}
-                    />
+                    <input type="number" className="input-field" value={grams}
+                      onChange={e => setGrams(Number(e.target.value))} min={1} max={2000} />
                     <span className="text-sm flex-shrink-0" style={{ color: 'var(--text-muted)' }}>g</span>
                   </div>
-
-                  {/* Quick portion buttons */}
                   <div className="flex gap-2 flex-wrap">
                     {[50, 100, 150, 200, 250, 300].map(g => (
                       <button key={g} onClick={() => setGrams(g)}
-                        className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${grams === g ? 'border-green-500 text-green-500 bg-green-50' : 'border-[var(--border-color)] text-[var(--text-secondary)]'}`}
-                        style={grams === g ? { background: 'rgba(34,197,94,0.08)' } : { background: 'var(--bg-secondary)' }}>
+                        className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all`}
+                        style={grams === g
+                          ? { background: 'rgba(34,197,94,0.08)', borderColor: '#22c55e', color: '#22c55e' }
+                          : { background: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>
                         {g}g
                       </button>
                     ))}
                   </div>
-
                   {nutrition && (
                     <div className="grid grid-cols-4 gap-2">
                       {[
@@ -146,40 +209,98 @@ function AddFoodModal({ onClose, onAdd, date, mealType }) {
                       ))}
                     </div>
                   )}
-
-                  <button onClick={handleAddFromDB} className="btn-primary w-full">
-                    Tambahkan ke Log
-                  </button>
+                  <button onClick={handleAddFromDB} className="btn-primary w-full">Tambahkan ke Log</button>
                 </div>
               )}
             </>
           ) : (
-            <div className="space-y-3">
+            /* ── AI Input Manual ── */
+            <div className="space-y-4">
+              {/* Info banner */}
+              <div className="rounded-xl p-3 flex items-start gap-2.5"
+                style={{ background: hasApiKey ? 'rgba(34,197,94,0.08)' : 'rgba(168,85,247,0.08)', border: `1px solid ${hasApiKey ? 'rgba(34,197,94,0.2)' : 'rgba(168,85,247,0.2)'}` }}>
+                <Sparkles size={16} style={{ color: hasApiKey ? '#22c55e' : '#a855f7', flexShrink: 0, marginTop: 1 }} />
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  {hasApiKey
+                    ? 'Ketik nama makanan — AI akan otomatis menentukan kandungan gizinya.'
+                    : 'Tambahkan VITE_GROQ_API_KEY di .env untuk fitur ini.'}
+                </p>
+              </div>
+
+              {/* Name input */}
               <div>
                 <label className="label">Nama Makanan</label>
-                <input type="text" className="input-field" placeholder="Contoh: Nasi Goreng Spesial"
-                  value={manualForm.name} onChange={e => setManualForm(f => ({ ...f, name: e.target.value }))} />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    className="input-field flex-1"
+                    placeholder="Contoh: Nasi Goreng Spesial, Mie Ayam..."
+                    value={manualName}
+                    onChange={e => { setManualName(e.target.value); setAiResult(null); setAiError(null) }}
+                    onKeyDown={e => e.key === 'Enter' && handleAILookup()}
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleAILookup}
+                    disabled={!manualName.trim() || aiLoading || !hasApiKey}
+                    className="btn-primary px-4 flex items-center gap-1.5 flex-shrink-0"
+                    style={{ opacity: (!manualName.trim() || !hasApiKey) ? 0.5 : 1 }}
+                  >
+                    {aiLoading
+                      ? <Loader2 size={15} className="animate-spin" />
+                      : <Zap size={15} />}
+                    {aiLoading ? 'Analisis...' : 'Cari'}
+                  </button>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { key: 'grams', label: 'Gram', unit: 'g' },
-                  { key: 'calories', label: 'Kalori', unit: 'kcal' },
-                  { key: 'protein', label: 'Protein', unit: 'g' },
-                  { key: 'carbs', label: 'Karbohidrat', unit: 'g' },
-                  { key: 'fat', label: 'Lemak', unit: 'g' },
-                ].map(field => (
-                  <div key={field.key}>
-                    <label className="label">{field.label} ({field.unit})</label>
-                    <input type="number" className="input-field" min={0} step={0.1}
-                      value={manualForm[field.key]}
-                      onChange={e => setManualForm(f => ({ ...f, [field.key]: e.target.value }))} />
+
+              {/* Loading */}
+              {aiLoading && (
+                <div className="text-center py-4" style={{ color: 'var(--text-muted)' }}>
+                  <Loader2 size={24} className="animate-spin mx-auto mb-2" style={{ color: '#22c55e' }} />
+                  <p className="text-xs">AI sedang menganalisis kandungan gizi...</p>
+                </div>
+              )}
+
+              {/* Error */}
+              {aiError && (
+                <div className="rounded-xl p-3 flex items-center gap-2"
+                  style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                  <AlertTriangle size={14} style={{ color: '#ef4444', flexShrink: 0 }} />
+                  <p className="text-xs text-red-400">{aiError}</p>
+                </div>
+              )}
+
+              {/* AI Result */}
+              {aiResult && !aiLoading && (
+                <div className="space-y-3 animate-fade-in">
+                  <div className="rounded-xl p-3" style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)' }}>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Sparkles size={13} style={{ color: '#22c55e' }} />
+                      <span className="text-xs font-semibold" style={{ color: '#22c55e' }}>Hasil Analisis AI</span>
+                    </div>
+                    <div className="font-semibold text-sm mb-1" style={{ color: 'var(--text-primary)' }}>{aiResult.name}</div>
+                    <div className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Estimasi per {aiResult.grams}g (1 porsi)</div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[
+                        { label: 'Kalori', value: Math.round(aiResult.calories), unit: 'kcal', color: '#22c55e' },
+                        { label: 'Protein', value: Number(aiResult.protein).toFixed(1), unit: 'g', color: '#3b82f6' },
+                        { label: 'Karbo', value: Number(aiResult.carbs).toFixed(1), unit: 'g', color: '#f97316' },
+                        { label: 'Lemak', value: Number(aiResult.fat).toFixed(1), unit: 'g', color: '#a855f7' },
+                      ].map(n => (
+                        <div key={n.label} className="text-center py-2 rounded-xl" style={{ background: `${n.color}10` }}>
+                          <div className="font-bold text-sm" style={{ color: n.color }}>{n.value}</div>
+                          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{n.unit}</div>
+                          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{n.label}</div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
-              </div>
-              <button onClick={handleAddManual} disabled={!manualForm.name}
-                className="btn-primary w-full" style={{ opacity: !manualForm.name ? 0.5 : 1 }}>
-                Tambahkan ke Log
-              </button>
+                  <button onClick={handleAddAIResult} className="btn-primary w-full">
+                    Tambahkan ke Log
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

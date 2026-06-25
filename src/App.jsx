@@ -3,41 +3,23 @@ import { AppProvider, useApp } from './context/AppContext'
 import Sidebar from './components/Sidebar'
 import MobileNav from './components/MobileNav'
 import Onboarding from './pages/Onboarding'
-import { Menu, Bell, Zap, Sun, Moon, Settings } from 'lucide-react'
+import { Menu, Zap, Sun, Moon, Settings } from 'lucide-react'
 
 // Lazy load pages
 const Dashboard = lazy(() => import('./pages/Dashboard'))
-const CalorieCalculator = lazy(() => import('./pages/CalorieCalculator'))
 const FoodTracker = lazy(() => import('./pages/FoodTracker'))
-const FavoriteFoods = lazy(() => import('./pages/FavoriteFoods'))
-const SnackTracker = lazy(() => import('./pages/SnackTracker'))
 const WeightTracker = lazy(() => import('./pages/WeightTracker'))
-const MealReminders = lazy(() => import('./pages/MealReminders'))
-const WeightPredictor = lazy(() => import('./pages/WeightPredictor'))
-const BudgetTracker = lazy(() => import('./pages/BudgetTracker'))
 const AIMealPlanner = lazy(() => import('./pages/AIMealPlanner'))
 const AIFoodScanner = lazy(() => import('./pages/AIFoodScanner'))
-const ProgressPhoto = lazy(() => import('./pages/ProgressPhoto'))
-const NutritionWarning = lazy(() => import('./pages/NutritionWarning'))
-const Analytics = lazy(() => import('./pages/Analytics'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 
 const PAGE_TITLES = {
-  'dashboard':        'BulkMate',
-  'calculator':       'Kalkulator Kalori',
-  'food-tracker':     'Food Tracker',
-  'favorites':        'Makanan Favorit',
-  'snack-tracker':    'Tracker Jajan',
-  'weight-tracker':   'Berat Badan',
-  'reminders':        'Pengingat Makan',
-  'predictor':        'Prediksi Target',
-  'budget':           'Budget Tracker',
-  'ai-planner':       'AI Meal Planner',
-  'ai-scanner':       'AI Food Scanner',
-  'progress-photo':   'Progress Photo',
-  'nutrition-warning':'Nutrition Warning',
-  'analytics':        'Analytics',
-  'settings':         'Pengaturan',
+  'dashboard':      'BulkMate',
+  'food-tracker':   'Food Tracker',
+  'ai-scanner':     'AI Food Scanner',
+  'weight-tracker': 'Berat Badan',
+  'ai-planner':     'AI Meal Planner',
+  'settings':       'Pengaturan',
 }
 
 function PageSkeleton() {
@@ -83,22 +65,13 @@ function AppContent() {
 
   const renderPage = () => {
     switch (activePage) {
-      case 'dashboard':       return <Dashboard onPageChange={setActivePage} />
-      case 'calculator':      return <CalorieCalculator onPageChange={setActivePage} />
-      case 'food-tracker':    return <FoodTracker />
-      case 'favorites':       return <FavoriteFoods />
-      case 'snack-tracker':   return <SnackTracker />
-      case 'weight-tracker':  return <WeightTracker />
-      case 'reminders':       return <MealReminders />
-      case 'predictor':       return <WeightPredictor />
-      case 'budget':          return <BudgetTracker />
-      case 'ai-planner':      return <AIMealPlanner />
-      case 'ai-scanner':      return <AIFoodScanner />
-      case 'progress-photo':  return <ProgressPhoto />
-      case 'nutrition-warning': return <NutritionWarning />
-      case 'analytics':       return <Analytics />
-      case 'settings':        return <SettingsPage />
-      default:                return <Dashboard onPageChange={setActivePage} />
+      case 'dashboard':     return <Dashboard onPageChange={setActivePage} />
+      case 'food-tracker':  return <FoodTracker />
+      case 'ai-scanner':    return <AIFoodScanner />
+      case 'weight-tracker':return <WeightTracker />
+      case 'ai-planner':    return <AIMealPlanner />
+      case 'settings':      return <SettingsPage />
+      default:              return <Dashboard onPageChange={setActivePage} />
     }
   }
 
@@ -188,7 +161,6 @@ function AppContent() {
       <MobileNav
         activePage={activePage}
         onPageChange={handleNav}
-        onMenuOpen={() => setMobileMenuOpen(true)}
       />
     </div>
   )
