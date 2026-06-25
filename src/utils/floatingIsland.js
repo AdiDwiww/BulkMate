@@ -1,55 +1,53 @@
 /**
- * FloatingIsland JS wrapper
- * Calls native FloatingIslandPlugin via Capacitor bridge directly.
+ * FloatingIsland — Capacitor 8 native plugin wrapper
+ * Uses registerPlugin at module level (required for Capacitor 6+)
  */
+import { registerPlugin } from '@capacitor/core'
 
-/** Call a native FloatingIsland plugin method directly via bridge */
-async function callNative(method, args = {}) {
+// Register at module level — WAJIB di Capacitor 8
+const FloatingIslandPlugin = registerPlugin('FloatingIsland', {
+  // Web stub — fungsi kosong agar tidak throw di browser
+  web: () => Promise.resolve({
+    checkPermission:    () => Promise.resolve({ granted: false }),
+    requestPermission:  () => Promise.resolve({}),
+    saveCameraPosition: () => Promise.resolve({}),
+    scheduleAll:        () => Promise.resolve({}),
+    cancelAll:          () => Promise.resolve({}),
+  }),
+})
+
+export async function checkOverlayPermission() {
   try {
-    if (!window?.Capacitor?.isNativePlatform?.()) return null
-    return await window.Capacitor.nativePromise('FloatingIsland', method, args)
-  } catch (e) {
-    console.warn(`FloatingIsland.${method} failed:`, e)
-    return null
+    const r = await FloatingIslandPlugin.checkPermission()
+    return r?.granted === true
+  } catch { return false }
+}
+
+export async function requestOverlayPermission() {
+  try {
+    await FloatingIslandPlugin.requestPermission()
+  } catch {
+    alert('Aktifkan manual:\nPengaturan → Aplikasi → BulkMate → Tampilkan di atas app lain → Aktifkan')
   }
 }
 
-/** Check if "Draw over other apps" permission is granted */
-export async function checkOverlayPermission() {
-  const r = await callNative('checkPermission')
-  return r?.granted === true
-}
-
-/** Open Android Settings to grant overlay permission */
-export async function requestOverlayPermission() {
-  const r = await callNative('requestPermission')
-  // If native call didn't work, show manual instructions
-  if (!r) showManualInstructions()
-}
-
-function showManualInstructions() {
-  alert(
-    'Aktifkan manual:\n' +
-    'Pengaturan → Aplikasi → BulkMate → ' +
-    'Tampilkan di atas app lain → Aktifkan'
-  )
-}
-
-/** Save camera position to SharedPreferences (used when app is closed) */
 export async function saveFloatingCameraPosition(offsetX, offsetY) {
-  await callNative('saveCameraPosition', {
-    offsetX: offsetX || 0,
-    offsetY: offsetY || 8,
-  })
+  try {
+    await FloatingIslandPlugin.saveCameraPosition({ offsetX: offsetX || 0, offsetY: offsetY || 8 })
+  } catch {}
 }
 
-/** Schedule all floating island alarms via native AlarmManager */
 export async function scheduleFloatingIslands(reminders) {
-  const r = await callNative('scheduleAll', { reminders })
-  return r !== null
+  try {
+    // Kirim sebagai JSON string karena array kadang tidak terserialize dengan benar
+    await FloatingIslandPlugin.scheduleAll({ remindersJson: JSON.stringify(reminders) })
+    return true
+  } catch (e) {
+    console.warn('scheduleFloatingIslands failed:', e)
+    return false
+  }
 }
 
-/** Cancel all scheduled floating island alarms */
 export async function cancelFloatingIslands() {
-  await callNative('cancelAll')
+  try { await FloatingIslandPlugin.cancelAll() } catch {}
 }
