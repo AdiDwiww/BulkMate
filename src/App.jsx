@@ -5,7 +5,7 @@ import MobileNav from './components/MobileNav'
 import Onboarding from './pages/Onboarding'
 import DynamicIsland from './components/DynamicIsland'
 import { Menu, Zap, Sun, Moon, Settings } from 'lucide-react'
-import { shouldFireNow, playAlarmSound, swNotify, registerSW } from './utils/alarmEngine'
+import { shouldFireNow, playAlarmSound, swNotify, registerSW, isNative, scheduleAllNativeReminders } from './utils/alarmEngine'
 
 // Lazy load pages
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -48,17 +48,37 @@ function AppContent() {
   const [activeAlarm, setActiveAlarm] = useState(null)
   const firedRef = useRef(new Set())
 
-  // Register Service Worker once
-  useEffect(() => { registerSW() }, [])
+  // Init notifikasi: native (APK) atau web SW
+  useEffect(() => {
+    const init = async () => {
+      if (isNative()) {
+        try {
+          const { LocalNotifications } = await import('@capacitor/local-notifications')
+          const perm = await LocalNotifications.requestPermissions()
+          if (perm.display === 'granted') {
+            await scheduleAllNativeReminders(state.reminders || [])
+          }
+        } catch (e) { console.warn('Native notif init:', e) }
+      } else {
+        registerSW()
+      }
+    }
+    init()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Alarm engine — cek setiap 30 detik
+  // Re-schedule native notif saat reminders berubah
+  useEffect(() => {
+    if (!isNative()) return
+    scheduleAllNativeReminders(state.reminders || []).catch(() => {})
+  }, [state.reminders])
+
+  // Alarm engine (in-app DynamicIsland + web SW) — cek setiap 30 detik
   useEffect(() => {
     const check = () => {
       const reminders = state.reminders || []
       const now = new Date()
       const minuteKey = `${now.getHours()}:${now.getMinutes()}`
 
-      // Reset fired set setiap menit baru
       if (firedRef.current._lastMinute !== minuteKey) {
         firedRef.current = new Set()
         firedRef.current._lastMinute = minuteKey
@@ -68,19 +88,12 @@ function AppContent() {
         if (!r.enabled) return
         if (firedRef.current.has(r.id)) return
         if (!shouldFireNow(r)) return
-
         firedRef.current.add(r.id)
-
-        // 1. Bunyi alarm
         playAlarmSound(r.sound, r.repeatCount)
-
-        // 2. Dynamic Island in-app
         setActiveAlarm(r)
-
-        // 3. Native notification (lock screen)
-        const title = r.label
-        const body = `Waktunya ${r.label}! Jangan lupa catat makanmu.`
-        swNotify(title, body, `alarm-${r.id}`, r.snoozeMinutes)
+        if (!isNative()) {
+          swNotify(r.label, `Waktunya ${r.label}! Jangan lupa catat makanmu.`, `alarm-${r.id}`, r.snoozeMinutes)
+        }
       })
     }
 
@@ -95,7 +108,9 @@ function AppContent() {
     setTimeout(() => {
       playAlarmSound(alarm.sound, alarm.repeatCount)
       setActiveAlarm({ ...alarm, _snoozed: true })
-      swNotify(`Snooze Selesai: ${alarm.label}`, 'Waktunya makan sekarang!', `alarm-${alarm.id}-snooze`, alarm.snoozeMinutes)
+      if (!isNative()) {
+        swNotify(`Snooze Selesai: ${alarm.label}`, 'Waktunya makan sekarang!', `alarm-${alarm.id}-snooze`, alarm.snoozeMinutes)
+      }
     }, (alarm.snoozeMinutes || 5) * 60 * 1000)
   }
 
