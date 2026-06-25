@@ -475,7 +475,8 @@
   /* Minimum tap target size for all interactive elements on mobile */
   @media (max-width: 767px) {
     /* Jangan override semua button tingginya - ini merusak toggle custom */
-    button:not(.toggle-switch) {
+    /* Hanya button yang tidak punya min-height: unset inline style */
+    button:not([style*="minHeight: unset"]):not([style*="min-height: unset"]) {
       min-height: 36px;
     }
 
@@ -588,7 +589,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 16px;
-    height: 56px;
+    padding-top: env(safe-area-inset-top, 0px);
+    height: calc(56px + env(safe-area-inset-top, 0px));
     position: sticky;
     top: 0;
     z-index: 30;

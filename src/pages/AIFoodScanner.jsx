@@ -345,9 +345,9 @@ export default function AIFoodScanner() {
               Drag & drop, pilih file, atau foto langsung
             </div>
 
-            {/* Two action buttons */}
+            {/* Action buttons */}
             <div className="flex gap-3 justify-center">
-              {/* Camera capture — buka kamera langsung di HP */}
+              {/* Camera capture — buka kamera belakang langsung di HP */}
               <button
                 onClick={() => cameraInputRef.current?.click()}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-white"
@@ -371,7 +371,7 @@ export default function AIFoodScanner() {
 
         {/* Input untuk pilih dari galeri */}
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-        {/* Input untuk buka kamera langsung (capture=environment = kamera belakang) */}
+        {/* Input untuk buka kamera belakang langsung */}
         <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
       </div>
 

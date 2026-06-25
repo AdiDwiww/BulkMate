@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 import { calculateBMR, calculateTDEE, calculateProteinTarget, ACTIVITY_LEVELS, categorizeBMI } from '../utils/helpers'
-import { Settings, Save, User, Target, Sun, Moon, Trash2, Download, LogOut, Zap, AlertTriangle, X, RefreshCw } from 'lucide-react'
+import { Settings, Save, User, Target, Sun, Moon, Trash2, Download, LogOut, Zap, AlertTriangle, X, RefreshCw, Smartphone } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 
 export default function SettingsPage() {
@@ -22,6 +22,19 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile')
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmLogout, setConfirmLogout] = useState(false)
+
+  // Posisi Dynamic Island — sesuaikan dengan kamera depan HP
+  const [camPos, setCamPos] = useState(() => {
+    try {
+      const s = localStorage.getItem('bulkmate_camera_position')
+      return s ? JSON.parse(s) : { offsetX: 0, offsetY: 0 }
+    } catch { return { offsetX: 0, offsetY: 0 } }
+  })
+  const saveCamPos = (pos) => {
+    const next = { ...camPos, ...pos }
+    setCamPos(next)
+    localStorage.setItem('bulkmate_camera_position', JSON.stringify(next))
+  }
 
   const bmi = form.weight && form.height ? categorizeBMI(form.weight, form.height) : null
   const bmr = calculateBMR(form.gender, form.weight, form.height, form.age)
@@ -227,26 +240,202 @@ export default function SettingsPage() {
           {/* Theme */}
           <div className="card p-5">
             <h2 className="font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Tampilan</h2>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {theme === 'dark' ? <Moon size={20} style={{ color: 'var(--text-secondary)' }} /> : <Sun size={20} style={{ color: '#f97316' }} />}
+
+            {/* Dark Mode Toggle Row */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '12px 16px', borderRadius: 14,
+              background: theme === 'dark' ? 'rgba(34,197,94,0.06)' : 'var(--bg-secondary)',
+              border: `1px solid ${theme === 'dark' ? 'rgba(34,197,94,0.2)' : 'var(--border-color)'}`,
+              transition: 'all 0.3s ease',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {/* Icon container */}
+                <div style={{
+                  width: 40, height: 40, borderRadius: 12,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: theme === 'dark' ? 'rgba(34,197,94,0.15)' : 'rgba(249,115,22,0.12)',
+                  flexShrink: 0,
+                }}>
+                  {theme === 'dark'
+                    ? <Moon size={20} color="#22c55e" />
+                    : <Sun size={20} color="#f97316" />}
+                </div>
                 <div>
-                  <div className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)' }}>
                     {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
                   </div>
-                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {theme === 'dark' ? 'Mode gelap aktif' : 'Mode terang aktif'}
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 1 }}>
+                    {theme === 'dark' ? 'Mode gelap aktif' : 'Ketuk untuk aktifkan dark mode'}
                   </div>
                 </div>
               </div>
+
+              {/* Toggle Switch — ukuran besar & jelas */}
               <button
                 onClick={() => dispatch({ type: 'SET_THEME', payload: theme === 'dark' ? 'light' : 'dark' })}
-                className="relative w-12 h-6 rounded-full transition-all duration-300"
-                style={{ background: theme === 'dark' ? '#22c55e' : 'var(--border-color)' }}>
-                <span className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-all duration-300"
-                      style={{ left: theme === 'dark' ? '26px' : '2px' }} />
+                aria-label="Toggle dark mode"
+                style={{
+                  position: 'relative',
+                  width: 54,
+                  height: 30,
+                  borderRadius: 99,
+                  border: 'none',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                  padding: 0,
+                  background: theme === 'dark'
+                    ? 'linear-gradient(135deg, #22c55e, #16a34a)'
+                    : '#cbd5e1',
+                  boxShadow: theme === 'dark'
+                    ? '0 0 0 3px rgba(34,197,94,0.25), inset 0 1px 3px rgba(0,0,0,0.2)'
+                    : 'inset 0 1px 3px rgba(0,0,0,0.15)',
+                  transition: 'background 0.3s ease, box-shadow 0.3s ease',
+                  minHeight: 'unset',
+                }}>
+                <span style={{
+                  position: 'absolute',
+                  top: 3,
+                  left: theme === 'dark' ? 27 : 3,
+                  width: 24,
+                  height: 24,
+                  background: 'white',
+                  borderRadius: '50%',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+                  transition: 'left 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }} />
               </button>
             </div>
+          </div>
+
+          {/* Posisi Dynamic Island — sesuaikan dengan kamera depan HP */}
+          <div className="card p-5">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0, boxShadow: '0 4px 12px rgba(99,102,241,0.35)',
+              }}>
+                <Smartphone size={18} color="white" />
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>Posisi Notifikasi (Dynamic Island)</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 1 }}>Sesuaikan agar pas di atas kamera depan HP kamu</div>
+              </div>
+            </div>
+
+            {/* Preview mini HP */}
+            <div style={{
+              position: 'relative', width: '100%', height: 80,
+              background: 'var(--bg-secondary)', borderRadius: 14,
+              border: '1px solid var(--border-color)',
+              overflow: 'hidden', marginBottom: 16,
+            }}>
+              {/* Status bar simulasi */}
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 20, background: 'rgba(0,0,0,0.08)' }} />
+              {/* Island preview */}
+              <div style={{
+                position: 'absolute',
+                top: 4,
+                left: `calc(50% + ${camPos.offsetX}px)`,
+                transform: 'translateX(-50%)',
+                width: 52, height: 14,
+                background: '#111',
+                borderRadius: 99,
+                boxShadow: '0 0 8px rgba(99,102,241,0.6)',
+                border: '1px solid rgba(99,102,241,0.5)',
+                transition: 'left 0.2s ease',
+              }} />
+              <div style={{
+                position: 'absolute', bottom: 6, left: 0, right: 0,
+                textAlign: 'center', fontSize: 11, color: 'var(--text-muted)',
+              }}>
+                Preview posisi notifikasi
+              </div>
+            </div>
+
+            {/* Geser Kiri – Kanan */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>Posisi Horizontal</span>
+                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{camPos.offsetX > 0 ? `+${camPos.offsetX}` : camPos.offsetX}px</span>
+              </div>
+              <input
+                type="range" min={-120} max={120} step={4}
+                value={camPos.offsetX}
+                onChange={e => saveCamPos({ offsetX: Number(e.target.value) })}
+                style={{ width: '100%', accentColor: '#6366f1' }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                <span>Kiri</span>
+                <span>Tengah</span>
+                <span>Kanan</span>
+              </div>
+            </div>
+
+            {/* Geser Atas – Bawah */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>Posisi Vertikal (jarak dari atas)</span>
+                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{camPos.offsetY >= 0 ? `+${camPos.offsetY}` : camPos.offsetY}px</span>
+              </div>
+              <input
+                type="range" min={-4} max={24} step={1}
+                value={camPos.offsetY}
+                onChange={e => saveCamPos({ offsetY: Number(e.target.value) })}
+                style={{ width: '100%', accentColor: '#6366f1' }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                <span>Lebih atas</span>
+                <span>Lebih bawah</span>
+              </div>
+            </div>
+
+            {/* Preset cepat */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>Preset Cepat</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {[
+                  { label: 'Tengah', offsetX: 0, offsetY: 0 },
+                  { label: 'Sedikit Kiri', offsetX: -30, offsetY: 0 },
+                  { label: 'Sedikit Kanan', offsetX: 30, offsetY: 0 },
+                  { label: 'Kiri Jauh', offsetX: -80, offsetY: 0 },
+                ].map(p => (
+                  <button
+                    key={p.label}
+                    onClick={() => saveCamPos({ offsetX: p.offsetX, offsetY: p.offsetY })}
+                    style={{
+                      padding: '5px 12px', borderRadius: 99, fontSize: 12, cursor: 'pointer',
+                      border: '1px solid var(--border-color)',
+                      background: camPos.offsetX === p.offsetX && camPos.offsetY === p.offsetY
+                        ? 'rgba(99,102,241,0.12)' : 'var(--bg-secondary)',
+                      color: camPos.offsetX === p.offsetX && camPos.offsetY === p.offsetY
+                        ? '#6366f1' : 'var(--text-secondary)',
+                      fontWeight: camPos.offsetX === p.offsetX ? 600 : 400,
+                      minHeight: 'unset',
+                    }}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={() => saveCamPos({ offsetX: 0, offsetY: 0 })}
+              style={{
+                width: '100%', padding: '8px 0', borderRadius: 10, border: '1px solid var(--border-color)',
+                background: 'transparent', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                minHeight: 'unset',
+              }}
+            >
+              <RefreshCw size={12} /> Reset ke tengah
+            </button>
           </div>
 
           {/* Data Management */}

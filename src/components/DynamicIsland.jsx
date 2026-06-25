@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Bell, X, Clock, Sunrise, Sun, Moon, Cookie, UtensilsCrossed } from 'lucide-react'
+import { Bell, X, Clock, Sunrise, Sun, Moon, Cookie } from 'lucide-react'
 
 const MEAL_META = {
   breakfast: { icon: Sunrise, color: '#f97316', label: 'Sarapan' },
@@ -8,10 +8,30 @@ const MEAL_META = {
   snack:     { icon: Cookie,  color: '#a855f7', label: 'Snack' },
 }
 
+// Baca posisi kamera depan dari localStorage
+// Disimpan sebagai: { offsetX: number (px dari tengah, + = kanan), offsetY: number (px ekstra dari atas) }
+function getCameraPosition() {
+  try {
+    const saved = localStorage.getItem('bulkmate_camera_position')
+    if (saved) return JSON.parse(saved)
+  } catch {}
+  return { offsetX: 0, offsetY: 0 }
+}
+
 export default function DynamicIsland({ alarm, onDismiss, onSnooze }) {
   const [phase, setPhase] = useState('idle') // idle | pill | expanded
+  const [camPos, setCamPos] = useState(getCameraPosition)
   const autoRef = useRef(null)
   const expandRef = useRef(null)
+
+  // Sync posisi kamera jika berubah (misal baru disimpan di Settings)
+  useEffect(() => {
+    const onStorage = () => setCamPos(getCameraPosition())
+    window.addEventListener('storage', onStorage)
+    // Juga polling ringan untuk update dari tab yang sama
+    const poll = setInterval(() => setCamPos(getCameraPosition()), 2000)
+    return () => { window.removeEventListener('storage', onStorage); clearInterval(poll) }
+  }, [])
 
   useEffect(() => {
     if (!alarm) { setPhase('idle'); return }
@@ -47,12 +67,23 @@ export default function DynamicIsland({ alarm, onDismiss, onSnooze }) {
   const Icon = meta.icon
   const isExpanded = phase === 'expanded'
 
+  // Posisi horizontal: offset dari center (px)
+  // Positif = geser kanan, negatif = geser kiri
+  const translateX = `calc(-50% + ${camPos.offsetX || 0}px)`
+  // Padding atas: safe area + offset Y tambahan dari pengaturan
+  const paddingTop = `max(env(safe-area-inset-top, 0px), ${8 + (camPos.offsetY || 0)}px)`
+
   return (
     <div style={{
-      position: 'fixed', top: 14, left: '50%',
-      transform: 'translateX(-50%)', zIndex: 9999,
-      display: 'flex', justifyContent: 'center',
+      position: 'fixed',
+      top: 0,
+      left: '50%',
+      transform: `translateX(${translateX})`,
+      zIndex: 9999,
+      display: 'flex',
+      justifyContent: 'center',
       pointerEvents: 'none',
+      paddingTop,
     }}>
       <div
         onClick={() => !isExpanded && setPhase('expanded')}
