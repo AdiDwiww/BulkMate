@@ -6,6 +6,7 @@ import Onboarding from './pages/Onboarding'
 import DynamicIsland from './components/DynamicIsland'
 import { Menu, Zap, Sun, Moon, Settings } from 'lucide-react'
 import { shouldFireNow, playAlarmSound, swNotify, registerSW, isNative, scheduleAllNativeReminders } from './utils/alarmEngine'
+import { checkOverlayPermission, scheduleFloatingIslands, saveFloatingCameraPosition } from './utils/floatingIsland'
 
 // Lazy load pages
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -66,10 +67,20 @@ function AppContent() {
     init()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Re-schedule native notif saat reminders berubah
+  // Re-schedule native notif + floating island saat reminders berubah
   useEffect(() => {
     if (!isNative()) return
-    scheduleAllNativeReminders(state.reminders || []).catch(() => {})
+    const reminders = state.reminders || []
+    scheduleAllNativeReminders(reminders).catch(() => {})
+    // Jadwalkan floating island jika permission sudah granted
+    checkOverlayPermission().then(granted => {
+      if (!granted) return
+      const camPos = (() => {
+        try { return JSON.parse(localStorage.getItem('bulkmate_camera_position') || '{}') } catch { return {} }
+      })()
+      saveFloatingCameraPosition(camPos.offsetX || 0, camPos.offsetY || 6)
+      scheduleFloatingIslands(reminders).catch(() => {})
+    })
   }, [state.reminders])
 
   // Alarm engine (in-app DynamicIsland + web SW) — cek setiap 30 detik
