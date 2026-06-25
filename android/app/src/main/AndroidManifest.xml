@@ -16,12 +16,10 @@
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
             android:exported="true">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
 
         <provider
@@ -33,14 +31,28 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
-    </application>
 
-    <!-- Permissions -->
+        <!-- Floating Island Service -->
+        <service
+            android:name=".FloatingIslandService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse" />
+
+        <!-- Floating Island BroadcastReceiver (AlarmManager trigger) -->
+        <receiver
+            android:name=".FloatingIslandReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="SHOW_FI" />
+            </intent-filter>
+        </receiver>
+
+    </application>
 
     <!-- Internet -->
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Kamera (untuk AI Food Scanner) -->
+    <!-- Kamera -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.front" android:required="false" />
@@ -48,18 +60,25 @@
     <!-- Notifikasi (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Alarm tepat waktu (exact alarms) -->
+    <!-- Alarm tepat waktu -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
-    <!-- Vibrasi saat alarm berbunyi -->
+    <!-- Vibrasi -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
-    <!-- Wake lock agar alarm bisa membangunkan layar -->
+    <!-- Wake lock -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- Jaringan -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- WAJIB untuk floating overlay di luar app -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <!-- Foreground service -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
 </manifest>

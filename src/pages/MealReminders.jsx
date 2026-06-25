@@ -11,6 +11,9 @@ import {
   playAlarmSound, requestNotifPermission, registerSW,
   scheduleAllNativeReminders, isNative,
 } from '../utils/alarmEngine'
+import {
+  checkOverlayPermission, requestOverlayPermission, scheduleFloatingIslands
+} from '../utils/floatingIsland'
 
 const MEAL_TYPES = [
   { key: 'breakfast', label: 'Sarapan',     icon: Sunrise, color: '#f97316' },
@@ -423,6 +426,8 @@ export default function MealReminders() {
     : ('Notification' in window ? Notification.permission : 'unsupported')
   )
 
+  const [overlayGranted, setOverlayGranted] = useState(false)
+
   // Cek status notifikasi native saat mount
   useEffect(() => {
     if (!isNative()) return
@@ -433,6 +438,8 @@ export default function MealReminders() {
         })
       )
       .catch(() => setNotifStatus('unsupported'))
+    // Cek overlay permission
+    checkOverlayPermission().then(setOverlayGranted)
   }, [])
 
   const requestPermission = async () => {
@@ -466,25 +473,30 @@ export default function MealReminders() {
     }
   }
 
+  const scheduleAll = async (next) => {
+    if (!isNative()) return
+    await scheduleAllNativeReminders(next)
+    await scheduleFloatingIslands(next)
+  }
+
   const save = async data => {
     const next = reminders.find(r => r.id === data.id)
       ? reminders.map(r => r.id === data.id ? data : r)
       : [...reminders, data]
     dispatch({ type: 'SET_REMINDERS', payload: next })
-    // Jadwalkan native background notifications (Capacitor)
-    if (isNative()) await scheduleAllNativeReminders(next)
+    await scheduleAll(next)
   }
 
   const remove = async id => {
     const next = reminders.filter(r => r.id !== id)
     dispatch({ type: 'SET_REMINDERS', payload: next })
-    if (isNative()) await scheduleAllNativeReminders(next)
+    await scheduleAll(next)
   }
 
   const toggle = async id => {
     const next = reminders.map(r => r.id === id ? { ...r, enabled: !r.enabled } : r)
     dispatch({ type: 'SET_REMINDERS', payload: next })
-    if (isNative()) await scheduleAllNativeReminders(next)
+    await scheduleAll(next)
   }
 
   const openAdd  = () => { setEditing(null); setShowModal(true) }
@@ -532,6 +544,52 @@ export default function MealReminders() {
         <div style={{ borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}>
           <AlarmCheck size={15} style={{ color: '#22c55e', flexShrink: 0 }} />
           <span style={{ fontSize: 12, color: '#22c55e', fontWeight: 600 }}>Notifikasi aktif — alarm muncul di layar terkunci</span>
+        </div>
+      )}
+
+      {/* Overlay (Dynamic Island luar app) permission banner */}
+      {isNative() && !overlayGranted && (
+        <div style={{
+          borderRadius: 14, padding: '14px 16px',
+          display: 'flex', alignItems: 'flex-start', gap: 12,
+          background: 'rgba(99,102,241,0.07)',
+          border: '1px solid rgba(99,102,241,0.22)',
+        }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+            background: 'rgba(99,102,241,0.12)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Smartphone size={18} style={{ color: '#6366f1' }} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)', marginBottom: 3 }}>
+              Aktifkan Dynamic Island
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10, lineHeight: 1.5 }}>
+              Izinkan "Tampilkan di atas app lain" agar pill alarm muncul di layar meski BulkMate ditutup.
+            </div>
+            <button
+              onClick={async () => {
+                await requestOverlayPermission()
+                setTimeout(() => checkOverlayPermission().then(setOverlayGranted), 1500)
+              }}
+              style={{
+                fontSize: 12, padding: '7px 16px', borderRadius: 10, border: 'none',
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                color: '#fff', fontWeight: 700, cursor: 'pointer',
+              }}
+            >
+              Izinkan Overlay
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isNative() && overlayGranted && (
+        <div style={{ borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
+          <AlarmCheck size={15} style={{ color: '#6366f1', flexShrink: 0 }} />
+          <span style={{ fontSize: 12, color: '#6366f1', fontWeight: 600 }}>Dynamic Island aktif — pill muncul meski app ditutup</span>
         </div>
       )}
 
