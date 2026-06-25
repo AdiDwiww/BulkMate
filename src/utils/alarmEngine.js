@@ -99,11 +99,31 @@ export async function requestNotifPermission() {
 }
 
 // ─── Schedule semua reminder ke Capacitor Local Notifications (native) ──────
-// Ini yang membuat notifikasi muncul WALAU APP DITUTUP
+// Kalau overlay sudah aktif → pakai floating island saja (anti-duplikasi)
+// Kalau overlay belum aktif → pakai Local Notifications sebagai fallback
 export async function scheduleAllNativeReminders(reminders) {
   if (!isNative()) return false
   try {
     const { LocalNotifications } = await import('@capacitor/local-notifications')
+
+    // Cek apakah FloatingIsland overlay sudah granted (anti-duplikasi)
+    const overlayGranted = await (async () => {
+      try {
+        const p = window?.Capacitor?.Plugins?.FloatingIsland
+        if (!p) return false
+        const r = await p.checkPermission()
+        return r?.granted === true
+      } catch { return false }
+    })()
+
+    // Jika overlay aktif → hapus Local Notifications dan skip (floating island yang handle)
+    if (overlayGranted) {
+      const pending = await LocalNotifications.getPending()
+      if (pending.notifications.length > 0) {
+        await LocalNotifications.cancel({ notifications: pending.notifications })
+      }
+      return true
+    }
 
     // Buat / pastikan channel tersedia (Android 8+)
     await LocalNotifications.createChannel({

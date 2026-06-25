@@ -149,27 +149,36 @@ export default function DynamicIsland({ alarm, onDismiss, onSnooze }) {
           onClick={() => { if (!expanded) setExpanded(true) }}
         >
 
-          {/* ── PILL ── */}
+          {/* ── PILL ── (gap tengah = area dot kamera depan) */}
           <div style={{
             position: 'absolute',
             top: 0, left: 0, right: 0,
             height: PILL_H,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+            display: 'flex', alignItems: 'center',
+            justifyContent: 'space-between',
             padding: '0 14px',
             opacity:   expanded ? 0 : 1,
             transform: expanded ? 'scale(0.82)' : 'scale(1)',
             transition: 'opacity 0.20s ease, transform 0.20s ease',
             pointerEvents: expanded ? 'none' : 'auto',
           }}>
+            {/* Sisi kiri — dot indikator warna */}
             <div style={{
-              width: 7, height: 7, borderRadius: '50%',
+              width: 8, height: 8, borderRadius: '50%',
               background: meta.color, flexShrink: 0,
               animation: 'di-pulse 1.2s ease-in-out infinite',
             }} />
-            <Bell size={12} color="white" />
-            <span style={{ color: '#fff', fontSize: 11.5, fontWeight: 700, letterSpacing: 0.1, whiteSpace: 'nowrap' }}>
-              Waktunya {meta.label}!
-            </span>
+
+            {/* Gap tengah kosong — area dot kamera depan HP (≈18px) */}
+            <div style={{ width: 18, flexShrink: 0 }} />
+
+            {/* Sisi kanan — bell + teks */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+              <Bell size={11} color="rgba(255,255,255,0.75)" />
+              <span style={{ color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: 0.1, whiteSpace: 'nowrap' }}>
+                Waktunya {meta.label}!
+              </span>
+            </div>
           </div>
 
           {/* ── EXPANDED ── */}

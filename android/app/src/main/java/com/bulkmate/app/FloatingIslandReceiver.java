@@ -115,47 +115,78 @@ public class FloatingIslandReceiver extends BroadcastReceiver {
     }
 
     /**
-     * Builds the pill view.
-     * Layout: [icon/dot] [space] [text] — no text over the camera hole.
-     * Camera is to the LEFT (pill starts from camera's right edge).
+     * Builds the pill view — matches in-app DynamicIsland design.
+     * Layout: [dot●] [18dp gap = camera hole] [🔔 Waktunya label!]
+     * Dot kamera HP ada di tengah pill → gap memastikan tidak ada teks di atas dot.
      */
     static LinearLayout buildPill(Context ctx, String label, int accent, int camX) {
         int d = (int) ctx.getResources().getDisplayMetrics().density;
 
+        // Root pill container
         LinearLayout pill = new LinearLayout(ctx);
         pill.setOrientation(LinearLayout.HORIZONTAL);
         pill.setGravity(Gravity.CENTER_VERTICAL);
-        pill.setPadding(12 * d, 7 * d, 14 * d, 7 * d);
+        pill.setPadding(14 * d, 0, 14 * d, 0);
+        pill.setMinimumHeight(36 * d);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
             pill.setElevation(10 * d);
 
-        GradientDrawable bg = new GradientDrawable();
+        // Background: dark gradient (#0f0f0f → #1e1e1e) + subtle white border
+        GradientDrawable bg = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{Color.parseColor("#0f0f0f"), Color.parseColor("#1e1e1e")}
+        );
         bg.setShape(GradientDrawable.RECTANGLE);
         bg.setCornerRadius(50 * d);
-        bg.setColor(Color.parseColor("#111111"));
-        bg.setStroke(2, Color.argb(55, 255, 255, 255));
+        bg.setStroke(1, Color.argb(26, 255, 255, 255)); // rgba(255,255,255,0.10)
         pill.setBackground(bg);
 
-        // Colored dot indicator
+        // ── Kiri: dot indikator warna (pulse animation) ──
         View dot = new View(ctx);
         LinearLayout.LayoutParams dotLp = new LinearLayout.LayoutParams(8 * d, 8 * d);
-        dotLp.setMarginEnd(7 * d);
         dot.setLayoutParams(dotLp);
         GradientDrawable dotBg = new GradientDrawable();
         dotBg.setShape(GradientDrawable.OVAL);
         dotBg.setColor(accent);
         dot.setBackground(dotBg);
+        android.view.animation.AlphaAnimation pulse =
+            new android.view.animation.AlphaAnimation(1f, 0.35f);
+        pulse.setDuration(600); pulse.setRepeatMode(android.view.animation.Animation.REVERSE);
+        pulse.setRepeatCount(android.view.animation.Animation.INFINITE);
+        dot.startAnimation(pulse);
 
-        // Text
+        // ── Tengah: gap 18dp = area dot kamera depan HP ──
+        Space cameraGap = new Space(ctx);
+        cameraGap.setLayoutParams(new LinearLayout.LayoutParams(18 * d, LinearLayout.LayoutParams.MATCH_PARENT));
+
+        // ── Kanan: grup bell + teks ──
+        LinearLayout right = new LinearLayout(ctx);
+        right.setOrientation(LinearLayout.HORIZONTAL);
+        right.setGravity(Gravity.CENTER_VERTICAL);
+
+        TextView bell = new TextView(ctx);
+        bell.setText("\uD83D\uDD14"); // 🔔
+        bell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f);
+        LinearLayout.LayoutParams bellLp = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        bellLp.setMarginEnd(5 * d);
+        bell.setLayoutParams(bellLp);
+
         TextView txt = new TextView(ctx);
         txt.setText("Waktunya " + label + "!");
         txt.setTextColor(Color.WHITE);
-        txt.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f);
+        txt.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f);
         txt.setTypeface(null, Typeface.BOLD);
+        txt.setLetterSpacing(0.01f);
         txt.setMaxLines(1);
+        txt.setEllipsize(android.text.TextUtils.TruncateAt.END);
+
+        right.addView(bell);
+        right.addView(txt);
 
         pill.addView(dot);
-        pill.addView(txt);
+        pill.addView(cameraGap);
+        pill.addView(right);
         return pill;
     }
 
