@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useApp } from '../context/AppContext'
 import {
   Bell, Plus, Trash2, X, Check, Volume2, VolumeX,
@@ -591,13 +592,14 @@ export default function MealReminders() {
         </span>
       </div>
 
-      {showModal && (
+      {showModal && createPortal(
         <AlarmModal
           alarm={editing}
           onSave={save}
           onDelete={remove}
           onClose={() => setShowModal(false)}
-        />
+        />,
+        document.body
       )}
     </div>
   )
