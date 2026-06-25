@@ -339,29 +339,47 @@
     transform: translateY(-2px);
   }
 
+  /* ── Modal ── */
   .modal-overlay {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.55);
     backdrop-filter: blur(6px);
     z-index: 100;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 72px 16px 24px;
-    overflow-y: auto;
   }
 
   .modal-content {
+    position: fixed;
+    top: 60px;
+    left: 12px;
+    right: 12px;
+    bottom: 70px;
+    max-width: 520px;
+    margin: 0 auto;
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 24px;
     box-shadow: var(--shadow-lg);
-    max-width: 520px;
-    width: 100%;
+    z-index: 101;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
-    flex-shrink: 0;
     animation: scaleIn 0.2s ease;
+  }
+
+  /* Desktop: centered dialog */
+  @media (min-width: 768px) {
+    .modal-overlay {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .modal-content {
+      position: relative;
+      top: auto; left: auto; right: auto; bottom: auto;
+      max-height: 90vh;
+    }
   }
 
   @keyframes slideUp {
@@ -478,10 +496,7 @@
       padding: 16px;
     }
 
-    /* Modal: full rounded corners, no max-height (overlay scrolls) */
-    .modal-content {
-      border-radius: 24px;
-    }
+    /* Modal handled by fixed positioning above */
 
     /* Smoother section titles */
     .section-title {
