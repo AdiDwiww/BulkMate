@@ -3,17 +3,40 @@
   "short_name": "BulkMate",
   "description": "Asisten Bulking Personal untuk Mahasiswa & Pekerja Indonesia",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#22c55e",
   "orientation": "portrait",
+  "lang": "id",
+  "categories": ["health", "fitness", "food"],
   "icons": [
     {
-      "src": "/vite.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
-  "categories": ["health", "fitness", "food"],
-  "lang": "id"
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Catat Makanan",
+      "short_name": "Makan",
+      "url": "/?page=food-tracker",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Scan Makanan AI",
+      "short_name": "Scan AI",
+      "url": "/?page=ai-scanner",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
 }
