@@ -1,17 +1,18 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 import {
-  LayoutDashboard, UtensilsCrossed, Scale, Wand2, Camera,
+  LayoutDashboard, UtensilsCrossed, Scale, Wand2, Camera, Bell,
   Settings, ChevronLeft, ChevronRight, Zap, X, Sun, Moon
 } from 'lucide-react'
 
 const navItems = [
-  { id: 'dashboard',    label: 'Dashboard',       icon: LayoutDashboard },
-  { id: 'food-tracker', label: 'Food Tracker',    icon: UtensilsCrossed },
-  { id: 'ai-scanner',   label: 'AI Food Scanner', icon: Camera },
-  { id: 'weight-tracker',label: 'Berat Badan',   icon: Scale },
-  { id: 'ai-planner',   label: 'AI Meal Planner', icon: Wand2 },
-  { id: 'settings',     label: 'Pengaturan',      icon: Settings },
+  { id: 'dashboard',    label: 'Dashboard',        icon: LayoutDashboard },
+  { id: 'food-tracker', label: 'Food Tracker',     icon: UtensilsCrossed },
+  { id: 'ai-scanner',   label: 'AI Food Scanner',  icon: Camera },
+  { id: 'weight-tracker',label: 'Berat Badan',    icon: Scale },
+  { id: 'ai-planner',   label: 'AI Meal Planner',  icon: Wand2 },
+  { id: 'reminders',    label: 'Pengingat Makan',  icon: Bell },
+  { id: 'settings',     label: 'Pengaturan',       icon: Settings },
 ]
 
 export default function Sidebar({ activePage, onPageChange, mobileOpen, setMobileOpen }) {

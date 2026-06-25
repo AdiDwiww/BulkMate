@@ -1,9 +1,11 @@
-import { useState, Suspense, lazy } from 'react'
+import { useState, Suspense, lazy, useEffect, useRef } from 'react'
 import { AppProvider, useApp } from './context/AppContext'
 import Sidebar from './components/Sidebar'
 import MobileNav from './components/MobileNav'
 import Onboarding from './pages/Onboarding'
+import DynamicIsland from './components/DynamicIsland'
 import { Menu, Zap, Sun, Moon, Settings } from 'lucide-react'
+import { shouldFireNow, playAlarmSound, swNotify, registerSW } from './utils/alarmEngine'
 
 // Lazy load pages
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -11,6 +13,7 @@ const FoodTracker = lazy(() => import('./pages/FoodTracker'))
 const WeightTracker = lazy(() => import('./pages/WeightTracker'))
 const AIMealPlanner = lazy(() => import('./pages/AIMealPlanner'))
 const AIFoodScanner = lazy(() => import('./pages/AIFoodScanner'))
+const MealReminders = lazy(() => import('./pages/MealReminders'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 
 const PAGE_TITLES = {
@@ -19,6 +22,7 @@ const PAGE_TITLES = {
   'ai-scanner':     'AI Food Scanner',
   'weight-tracker': 'Berat Badan',
   'ai-planner':     'AI Meal Planner',
+  'reminders':      'Pengingat Makan',
   'settings':       'Pengaturan',
 }
 
@@ -41,25 +45,73 @@ function AppContent() {
   const { state, dispatch } = useApp()
   const [activePage, setActivePage] = useState('dashboard')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [activeAlarm, setActiveAlarm] = useState(null)
+  const firedRef = useRef(new Set())
 
-  // Onboarding: tampil jika belum pernah selesai onboarding
+  // Register Service Worker once
+  useEffect(() => { registerSW() }, [])
+
+  // Alarm engine — cek setiap 30 detik
+  useEffect(() => {
+    const check = () => {
+      const reminders = state.reminders || []
+      const now = new Date()
+      const minuteKey = `${now.getHours()}:${now.getMinutes()}`
+
+      // Reset fired set setiap menit baru
+      if (firedRef.current._lastMinute !== minuteKey) {
+        firedRef.current = new Set()
+        firedRef.current._lastMinute = minuteKey
+      }
+
+      reminders.forEach(r => {
+        if (!r.enabled) return
+        if (firedRef.current.has(r.id)) return
+        if (!shouldFireNow(r)) return
+
+        firedRef.current.add(r.id)
+
+        // 1. Bunyi alarm
+        playAlarmSound(r.sound, r.repeatCount)
+
+        // 2. Dynamic Island in-app
+        setActiveAlarm(r)
+
+        // 3. Native notification (lock screen)
+        const title = `🍽️ ${r.label}`
+        const body = `Waktunya ${r.label}! Jangan lupa catat makanmu.`
+        swNotify(title, body, `alarm-${r.id}`, r.snoozeMinutes)
+      })
+    }
+
+    check()
+    const id = setInterval(check, 30000)
+    return () => clearInterval(id)
+  }, [state.reminders])
+
+  // Handle snooze dari DynamicIsland
+  const handleSnooze = (alarm) => {
+    if (!alarm) return
+    setTimeout(() => {
+      playAlarmSound(alarm.sound, alarm.repeatCount)
+      setActiveAlarm({ ...alarm, _snoozed: true })
+      swNotify(`⏰ ${alarm.label}`, 'Snooze selesai! Waktunya makan.', `alarm-${alarm.id}-snooze`, alarm.snoozeMinutes)
+    }, (alarm.snoozeMinutes || 5) * 60 * 1000)
+  }
+
+  // Onboarding
   const [showOnboarding, setShowOnboarding] = useState(
     !localStorage.getItem('bulkmate_onboarding_done')
   )
-
   const handleOnboardingComplete = () => {
     localStorage.setItem('bulkmate_onboarding_done', '1')
     setShowOnboarding(false)
   }
-
-  if (showOnboarding) {
-    return <Onboarding onComplete={handleOnboardingComplete} />
-  }
+  if (showOnboarding) return <Onboarding onComplete={handleOnboardingComplete} />
 
   const handleNav = (page) => {
     setActivePage(page)
     setMobileMenuOpen(false)
-    // Scroll to top saat pindah halaman di mobile
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -70,6 +122,7 @@ function AppContent() {
       case 'ai-scanner':    return <AIFoodScanner />
       case 'weight-tracker':return <WeightTracker />
       case 'ai-planner':    return <AIMealPlanner />
+      case 'reminders':     return <MealReminders />
       case 'settings':      return <SettingsPage />
       default:              return <Dashboard onPageChange={setActivePage} />
     }
@@ -79,6 +132,13 @@ function AppContent() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)' }}>
+      {/* Dynamic Island alarm notification */}
+      <DynamicIsland
+        alarm={activeAlarm}
+        onDismiss={() => setActiveAlarm(null)}
+        onSnooze={(a) => { setActiveAlarm(null); handleSnooze(a) }}
+      />
+
       {/* Sidebar */}
       <Sidebar
         activePage={activePage}
