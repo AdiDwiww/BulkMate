@@ -84,14 +84,10 @@ public class FloatingIslandService extends Service {
             PixelFormat.TRANSLUCENT
         );
         
-        // BUG 1 & 5: Detect DisplayCutout (punch-hole) or fallback to statusBarHeight
-        int statusBarHeight = 0;
-        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
-        if (resourceId > 0) statusBarHeight = getResources().getDimensionPixelSize(resourceId);
-
+        // BUG 1 & 5: Default to 0 so it merges with the top bezel on non-cutout devices (no floating gap)
         lp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
         lp.x = 0; 
-        lp.y = statusBarHeight; // Fallback for non-cutout devices
+        lp.y = 0; // Set as high as possible
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             root.setOnApplyWindowInsetsListener((v, insets) -> {
@@ -136,8 +132,14 @@ public class FloatingIslandService extends Service {
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(Gravity.CENTER_VERTICAL);
-        View iconBox = new View(this);
+        
+        android.widget.ImageView iconBox = new android.widget.ImageView(this);
         iconBox.setLayoutParams(new LinearLayout.LayoutParams(32 * d, 32 * d));
+        iconBox.setImageResource(android.R.drawable.ic_lock_idle_alarm);
+        iconBox.setColorFilter(accent);
+        iconBox.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+        iconBox.setPadding(7 * d, 7 * d, 7 * d, 7 * d);
+        
         GradientDrawable ibg = new GradientDrawable(); ibg.setColor(Color.argb(32, Color.red(accent), Color.green(accent), Color.blue(accent)));
         ibg.setCornerRadius(10 * d); ibg.setStroke(1, Color.argb(55, Color.red(accent), Color.green(accent), Color.blue(accent)));
         iconBox.setBackground(ibg);

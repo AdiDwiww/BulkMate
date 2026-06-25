@@ -110,13 +110,13 @@ public class FloatingIslandReceiver extends BroadcastReceiver {
         right.setOrientation(LinearLayout.HORIZONTAL);
         right.setGravity(Gravity.CENTER_VERTICAL);
 
-        TextView bell = new TextView(ctx);
-        bell.setText("\uD83D\uDD14"); // 🔔
-        bell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f);
-        LinearLayout.LayoutParams bellLp = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        android.widget.ImageView bell = new android.widget.ImageView(ctx);
+        bell.setImageResource(android.R.drawable.ic_lock_idle_alarm);
+        bell.setColorFilter(Color.argb(190, 255, 255, 255)); // rgba(255,255,255,0.75)
+        LinearLayout.LayoutParams bellLp = new LinearLayout.LayoutParams(11 * d, 11 * d);
         bellLp.setMarginEnd(5 * d);
         bell.setLayoutParams(bellLp);
+        bell.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
 
         TextView txt = new TextView(ctx);
         txt.setText("Waktunya " + label + "!");
